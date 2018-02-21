@@ -9,9 +9,27 @@ typedef struct Supernova{
     float y;
 }Supernova;
 
+struct LLSupernova{
+    float x;
+    float y; 
+    struct LLSupernova * next_LLSN; 
+};
+
+struct LLSupernova * initialize_LLSupernova(float argx, float argy){
+    struct LLSupernova *new_LLSN = malloc(sizeof(struct LLSupernova)); 
+
+    new_LLSN->x = argx; 
+    new_LLSN->y = argy; 
+    new_LLSN->next_LLSN = NULL;
+  //for (i = 0; i < n_part; i++) 
+   // new_clump->coordinates[i] = (float *) malloc(3 * sizeof(float)); 
+    return new_LLSN;
+};
+
+
 //int add_arrays(int N, float * a, float * b, float * H_OUT);
 
-int add_arrays(int N, float * a, float * b, Supernova * c, float * H_OUT ){
+int add_arrays(int N, float * a, float * b, Supernova * c, struct LLSupernova * d, float * H_OUT ){
     for (int i = 0; i<N; i++){
         H_OUT[i]= a[i]+b[i];
     }
@@ -23,6 +41,16 @@ int add_arrays(int N, float * a, float * b, Supernova * c, float * H_OUT ){
 
     c->x=15;
     c->y=45;
+
+
+    d->x = 16;
+    d->y = 18;
+    printf("Trying to set next LLSupernova... \n");
+    d->next_LLSN = initialize_LLSupernova(3,7); 
+    // set 3rd llsn
+    d->next_LLSN->next_LLSN = initialize_LLSupernova(29,13); 
+
+    printf("Successfully set next LLSupernova! \n");
 
     return 0;
 }
