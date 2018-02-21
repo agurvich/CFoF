@@ -25,13 +25,11 @@ class Supernova(ctypes.Structure):
                 ("y", ctypes.c_float)]
 
 c = Supernova()
-
-
+d = (Supernova*5)()
 
 
 c.x = 2.0
 c.y = 10.0
-print c.x,c.y
 
 
 exec_call = "/home/abg6257/CFoF/fof_sne.so"
@@ -44,13 +42,17 @@ c_obj.add_arrays(
     ctypes.c_int(11),
     a.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
     b.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
-    ctypes.byref(c),
+    ctypes.byref(d),
     ctypes.byref(H_OUT))
 
 h=np.ctypeslib.as_array(H_OUT)
 print h
 
-print c.x,c.y
+print d[0].x
+print d[0].y
+
+print d[1].x
+print d[1].y
 
 
 

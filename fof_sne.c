@@ -16,9 +16,13 @@ int add_arrays(int N, float * a, float * b, Supernova * c, float * H_OUT ){
         H_OUT[i]= a[i]+b[i];
     }
 
-    printf("%.2f,%.2f\n",c->x,c->y);
     c->x=5.0;
     c->y=20.0;
+
+    c++;
+
+    c->x=15;
+    c->y=45;
 
     return 0;
 }
