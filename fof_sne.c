@@ -4,17 +4,23 @@
 #include <math.h>
 
 
-int add_arrays(int num_elements, float * a, float * b, float * H_OUT);
+typedef struct Supernova{
+    float x;
+    float y;
+}Supernova;
 
-int add_arrays(int num_elements, float * a, float * b, float * H_OUT ){
-    for (int i = 0; i<num_elements; i++){
-        //H_OUT[i]= a[i]+b[i];
-        H_OUT[i]=5;
+//int add_arrays(int N, float * a, float * b, float * H_OUT);
+
+int add_arrays(int N, float * a, float * b, Supernova * c, float * H_OUT ){
+    for (int i = 0; i<N; i++){
+        H_OUT[i]= a[i]+b[i];
     }
-    H_OUT[0]=5;
 
-    printf("Hello World!");
-    return 1;
+    printf("%.2f,%.2f\n",c->x,c->y);
+    c->x=5.0;
+    c->y=20.0;
+
+    return 0;
 }
 
 
