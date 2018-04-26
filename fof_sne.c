@@ -27,12 +27,108 @@ struct LLSupernova * initialize_LLSupernova(float argx, float argy){
 };
 
 
+int popArray(int * array, int index,int *Narr){
+    
+    *Narr-=1;
+    return array[index];
+
+}
+
+int twofunc(int var){
+    return var > 5;
+}
+
+//
+// my first function pointer, I'm so proud!!
+void * popSubset(
+    int * array,int * Narr,
+    int * sub_array, int *subNarr,
+    int boolfunc(int),int * boolflags){
+    for (int i=0; i<*Narr;i++){
+        if (boolfunc(array[i])){
+            boolflags[i]=1;
+            // add the value to the sub_array
+            sub_array[*subNarr]=array[i];
+
+            (*subNarr)++;
+        }
+        else if (*subNarr > 0){
+            // we've removed something, so we should shift the array
+            array[i-*subNarr]=array[i];
+        } 
+        
+    }
+    // reduce the size by the number of elements popped
+    *Narr-=*subNarr;
+
+}
+
+void fillFromFlags(int * arr, int Narr, int * subarr, int * flags){
+    int filled=0;
+    for (int i=0; i<Narr;i++){
+        if (flags[i]){
+            subarr[filled]=arr[i];
+            filled++;
+        }
+        // need to shift this array 
+        else if(filled){
+            arr[i-filled]=arr[i];
+        }
+    }
+}
+
 //int add_arrays(int N, float * a, float * b, float * H_OUT);
+//
+void printArray(int * arr,int Narr){
+    for (int i=0; i< Narr; i++){
+        printf("%d\t",arr[i]);
+    }
+    printf("\n");
+}
 
 int add_arrays(int N, float * a, float * b, Supernova * c, struct LLSupernova * d, float * H_OUT ){
     for (int i = 0; i<N; i++){
         H_OUT[i]= a[i]+b[i];
     }
+
+    
+    int arr[5],sub_array[5],boolflags[5],second[5];
+    int * subsecond;
+    int Narr=5,subNarr=0;
+    
+    // make sure the array is 0'd out
+    memset(boolflags,0,Narr*sizeof(int));
+
+    arr[0]=5;
+    arr[1]=10;
+    arr[2]=1;
+    arr[3]=7;
+    arr[4]=0;
+
+    second[0]=1;
+    second[1]=2;
+    second[2]=3;
+    second[3]=4;
+    second[4]=5;
+
+    printArray(arr,Narr);
+    printArray(second,Narr);
+    printf("------------------\n");
+    // remove the badboys from the arr 
+    popSubset(arr,&Narr,sub_array,&subNarr,twofunc,boolflags);
+    printArray(boolflags,Narr+subNarr);
+    printf("array lengths: %d %d\n",Narr,subNarr);
+    printArray(arr,Narr);
+    printf("now the sub array\n");
+    printArray(sub_array,subNarr);
+    printf("------------------\n");
+
+    subsecond=(int*)malloc(subNarr*sizeof(int));
+    fillFromFlags(second,Narr+subNarr,subsecond,boolflags);
+    printArray(second,Narr);
+    printf("and now the subsecond array!\n");
+    printArray(subsecond,subNarr);
+    printf("------------------\n");
 
     c->x=5.0;
     c->y=20.0;
@@ -45,12 +141,12 @@ int add_arrays(int N, float * a, float * b, Supernova * c, struct LLSupernova * 
 
     d->x = 16;
     d->y = 18;
-    printf("Trying to set next LLSupernova... \n");
+    //printf("Trying to set next LLSupernova... \n");
     d->next_LLSN = initialize_LLSupernova(3,7); 
     // set 3rd llsn
     d->next_LLSN->next_LLSN = initialize_LLSupernova(29,13); 
 
-    printf("Successfully set next LLSupernova! \n");
+    //printf("Successfully set next LLSupernova! \n");
 
     return 0;
 }
