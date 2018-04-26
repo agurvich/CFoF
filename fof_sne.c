@@ -26,17 +26,14 @@ struct LLSupernova * initialize_LLSupernova(float argx, float argy){
     return new_LLSN;
 };
 
-int twofunc(float var){
-    return (int)var % 2;
-}
-
-// my first function pointer, I'm so proud!!
 void * findNGBFlags(
-    float * array,int * Narr,
-    int boolfunc(float),
+    int Narr,
+    float * dists,
+    float * linkingLengths,
+    float link_node,
     int * ngbflags, int * numNGB){
-    for (int i=0; i<*Narr;i++){
-        if (boolfunc(array[i])){
+    for (int i=0; i<Narr;i++){
+        if (dists[i] < link_node || dists[i] < linkingLengths[i]){
             ngbflags[i]=1;
             (*numNGB)++;
         }
@@ -50,6 +47,15 @@ void getIndicesFromFlags(int * NGBFlags, int Narr, int * NGBIndices){
             NGBIndices[filled]=i;
             filled++;
         }
+    }
+}
+
+void calculateDists(float * point, float * xs, float * ys, float * zs,int Narr, float * dists){
+    for (int i =0; i<Narr; i++){
+        float dx = point[0]-xs[i];
+        float dy = point[1]-ys[i];
+        float dz = point[2]-zs[i];
+        dists[i]=dx*dx + dy*dy + dz*dz;
     }
 }
 
@@ -127,8 +133,13 @@ int FoFNGB(
     second[4]=5;
     */
 
-    printArray(arr,Narr);
-    printArray(second,Narr);
+    float point[3];
+    point[0]=xs[0];
+    point[1]=ys[0];
+    point[2]=zs[0];
+
+    //printArray(arr,Narr);
+    //printArray(second,Narr);
     printf("------------------\n");
 
     // initialize NGB variables
@@ -141,8 +152,28 @@ int FoFNGB(
 
 
     // find the neighbor indices
-    findNGBFlags(arr,&Narr,twofunc,NGBFlags,&numNGB);
+    float * dists;
+    dists = (float *) malloc(Narr*sizeof(float));
+    // calculate the distance to each point
+    calculateDists(point,xs,ys,zs,Narr,dists);
+    //printArray(xs,Narr);
+    //printArray(ys,Narr);
+    //printArray(zs,Narr);
+    //printf("------------------\n");
+    printArray(dists,Narr);
+    /*
+    findNGBFlags(
+        Narr,
+        dists,
+        linkingLengths,linkingLengths[0],
+        NGBFlags,&numNGB);
+    */
+
+
+    //printIntArray(NGBFlags,numNGB);
     
+    /*
+     *
     // allocate memory for, and find, NGB indices
     NGBIndices=(int*)malloc(numNGB*sizeof(int));
     getIndicesFromFlags(NGBFlags,Narr,NGBIndices);
@@ -172,6 +203,7 @@ int FoFNGB(
 
     printf("------------------\n");
 
+    */
 
     /*
     c->x=5.0;

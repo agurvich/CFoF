@@ -21,8 +21,20 @@ a = np.array(a,dtype='f',ndmin=1)
 b = np.array(b,dtype='f',ndmin=1)
 
 
+
+
 ## set-up some random positions
 x,y,z = ((np.random.rand(3,NSNe)-0.5)*15).astype('f')
+
+"""
+print 'python distances'
+print x
+print y
+print z
+print '---------------------'
+
+print (x-x[0])**2+(y-y[0])**2+(z-z[0])**2
+"""
 
 ## fixed linking length of .1, for now
 linkingLengths = np.ones(NSNe,dtype='f')/10.
