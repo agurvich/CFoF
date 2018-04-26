@@ -40,13 +40,14 @@ int twofunc(int var){
 
 //
 // my first function pointer, I'm so proud!!
-void * popSubset(
+void * findNGBFlags(
     int * array,int * Narr,
-    int * sub_array, int *subNarr,
-    int boolfunc(int),int * boolflags){
+    int boolfunc(int),
+    int * ngbflags, int * numNGB){
     for (int i=0; i<*Narr;i++){
         if (boolfunc(array[i])){
-            boolflags[i]=1;
+            ngbflags[i]=1;
+            (*numNGB)++;
 
             // delete this particle by replacing it with the last particle
             // since the order doesn't matter, it's all good
@@ -59,16 +60,43 @@ void * popSubset(
 
 }
 
-void getIndicesFromFlags(int * arr, int Narr, int * subarr, int * flags){
+
+void getIndicesFromFlags(int * NGBFlags, int Narr, int * NGBIndices){
     int filled=0;
     for (int i=0; i<Narr;i++){
-        if (flags[i]){
-            subarr[filled]=i;
+        if (NGBFlags[i]){
+            NGBIndices[filled]=i;
             filled++;
         }
-        // need to shift this array 
-        else if(filled){
-            arr[i-filled]=arr[i];
+    }
+}
+
+void extractSubarrayWithIndices(
+    int * array, int * subarray, 
+    int * NGBIndices, 
+    int Narray, int numNGB,
+    int checkNGBIndices){
+    for (int i=0; i<numNGB; i++){
+        int ngbindex = NGBIndices[i];
+        //extract the value
+        subarray[i]= array[ngbindex];
+
+        // replace it with the value at the end
+        array[ngbindex]=array[Narray-1-i];
+        
+        // only needs to be done once, since we'll be following the same pattern
+        // of extraction/replacement for every array
+        if (checkNGBIndices){
+            // check if the value we just moved is actually a neighbor
+            for (int j=numNGB; j>0; j--){
+                // if it is, then 
+                if (Narray-1-i == NGBIndices[j]){
+                    NGBIndices[j]=ngbindex;
+                    break;
+                }
+                // no need to go any further back, those indices have already been extracted
+                if (i>=j)break;
+            }
         }
     }
 }
@@ -82,18 +110,18 @@ void printArray(int * arr,int Narr){
     printf("\n");
 }
 
+
 int add_arrays(int N, float * a, float * b, Supernova * c, struct LLSupernova * d, float * H_OUT ){
     for (int i = 0; i<N; i++){
         H_OUT[i]= a[i]+b[i];
     }
 
     
-    int arr[5],sub_array[5],boolflags[5],second[5];
-    int * subsecond;
+    int arr[5],second[5];
     int Narr=5,subNarr=0;
     
     // make sure the array is 0'd out
-    memset(boolflags,0,Narr*sizeof(int));
+
 
     arr[0]=5;
     arr[1]=10;
@@ -110,21 +138,41 @@ int add_arrays(int N, float * a, float * b, Supernova * c, struct LLSupernova * 
     printArray(arr,Narr);
     printArray(second,Narr);
     printf("------------------\n");
-    // remove the badboys from the arr 
-    popSubset(arr,&Narr,sub_array,&subNarr,twofunc,boolflags);
-    printArray(boolflags,Narr+subNarr);
-    printf("array lengths: %d %d\n",Narr,subNarr);
-    printArray(arr,Narr);
-    printf("now the sub array\n");
-    printArray(sub_array,subNarr);
+
+    // initialize NGB variables
+    int numNGB=0;
+    int * NGBFlags;
+    int * NGBIndices;
+    // allocate ngbflags memory
+    NGBFlags=(int*)malloc(Narr*sizeof(int));
+    memset(NGBFlags,0,Narr*sizeof(int));
+
+
+    // find the neighbor indices
+    findNGBFlags(arr,&Narr,twofunc,NGBFlags,&numNGB);
+    
+    // allocate memory for, and find, NGB indices
+    NGBIndices=(int*)malloc(numNGB*sizeof(int));
+    getIndicesFromFlags(NGBFlags,Narr,NGBIndices);
+
+    // allocate the buffer array
+    int * sub_arr;
+    int * subsecond;
+    sub_arr=(int*)malloc(numNGB*sizeof(int));
+    subsecond=(int*)malloc(numNGB*sizeof(int));
+
+
+    printArray(NGBIndices,numNGB);
+    extractSubarrayWithIndices(arr,sub_arr,NGBIndices,Narr,numNGB,1);
+    extractSubarrayWithIndices(second,subsecond,NGBIndices,Narr,numNGB,0);
+    
+    printArray(NGBFlags,Narr);
+    printArray(NGBIndices,numNGB);
+    printArray(sub_arr,numNGB);
+    printArray(subsecond,numNGB);
+
     printf("------------------\n");
 
-    subsecond=(int*)malloc(subNarr*sizeof(int));
-    //fillFromFlags(second,Narr+subNarr,subsecond,boolflags);
-    printArray(second,Narr);
-    printf("and now the subsecond array!\n");
-    printArray(subsecond,subNarr);
-    printf("------------------\n");
 
     c->x=5.0;
     c->y=20.0;
