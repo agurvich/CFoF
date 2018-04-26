@@ -12,11 +12,27 @@ from distinct_colours import get_distinct#,cm_linear,cm_plusmin
 
 from readsnap import readsnap
 
-a = np.linspace(0,20,21)
-b = np.linspace(10,20,21)
+NSNe=11
+
+a = np.linspace(1,19,NSNe)
+b = np.linspace(11,21,NSNe)
 
 a = np.array(a,dtype='f',ndmin=1)
 b = np.array(b,dtype='f',ndmin=1)
+
+
+## set-up some random positions
+x,y,z = ((np.random.rand(3,NSNe)-0.5)*15).astype('f')
+
+## fixed linking length of .1, for now
+linkingLengths = np.ones(NSNe,dtype='f')/10.
+
+## launch times, fixed at 1 for now
+launchTimes = np.ones(NSNe,dtype='f')
+
+## cooling times 
+coolingTimes = np.ones(NSNe,dtype='f')
+
 
 import ctypes
 class Supernova(ctypes.Structure):
@@ -47,9 +63,17 @@ c_obj = ctypes.CDLL(exec_call)
 h_out_cast=ctypes.c_float*11
 H_OUT=h_out_cast()
 
+print "THIS IS B",b
 print "Executing c code"
-c_obj.add_arrays(
-    ctypes.c_int(len(a)),
+c_obj.FoFNGB(
+    ctypes.c_int(NSNe),
+    x.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
+    y.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
+    z.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
+
+    launchTimes.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
+    coolingTimes.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
+    linkingLengths.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
     a.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
     b.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
     #ctypes.byref(c),

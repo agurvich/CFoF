@@ -98,7 +98,13 @@ void printIntArray(int * arr,int Narr){
 }
 
 // Supernova * c, struct LLSupernova * d,
-int add_arrays(int Narr, float * arr, float * second, float * H_OUT ){
+int FoFNGB(
+    int Narr,
+    float * xs, float * ys, float * zs,
+    float * launchTimes, float * coolingTimes,
+    float * linkingLengths,
+    float * arr, float * second, 
+    float * H_OUT ){
     /*
     for (int i = 0; i<N; i++){
         H_OUT[i]= a[i]+b[i];
