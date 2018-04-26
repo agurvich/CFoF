@@ -26,40 +26,22 @@ struct LLSupernova * initialize_LLSupernova(float argx, float argy){
     return new_LLSN;
 };
 
-
-int popArray(int * array, int index,int *Narr){
-    
-    *Narr-=1;
-    return array[index];
-
+int twofunc(float var){
+    return (int)var % 2;
 }
 
-int twofunc(int var){
-    return var > 2;
-}
-
-//
 // my first function pointer, I'm so proud!!
 void * findNGBFlags(
-    int * array,int * Narr,
-    int boolfunc(int),
+    float * array,int * Narr,
+    int boolfunc(float),
     int * ngbflags, int * numNGB){
     for (int i=0; i<*Narr;i++){
         if (boolfunc(array[i])){
             ngbflags[i]=1;
             (*numNGB)++;
-
-            // delete this particle by replacing it with the last particle
-            // since the order doesn't matter, it's all good
-            //array[i]=array[*Narr-*subNarr-1];
-            //(*subNarr)++;
         }
     }
-    // reduce the size by the number of elements popped
-    //*Narr-=*subNarr;
-
 }
-
 
 void getIndicesFromFlags(int * NGBFlags, int Narr, int * NGBIndices){
     int filled=0;
@@ -72,7 +54,7 @@ void getIndicesFromFlags(int * NGBFlags, int Narr, int * NGBIndices){
 }
 
 void extractSubarrayWithIndices(
-    int * array, int * subarray, 
+    float * array, float * subarray, 
     int * NGBIndices, 
     int Narray, int numNGB,
     int checkNGBIndices){
@@ -101,27 +83,30 @@ void extractSubarrayWithIndices(
     }
 }
 
-//int add_arrays(int N, float * a, float * b, float * H_OUT);
-//
-void printArray(int * arr,int Narr){
+void printArray(float * arr,int Narr){
+    for (int i=0; i< Narr; i++){
+        printf("%.2f\t",arr[i]);
+    }
+    printf("\n");
+}
+
+void printIntArray(int * arr,int Narr){
     for (int i=0; i< Narr; i++){
         printf("%d\t",arr[i]);
     }
     printf("\n");
 }
 
-
-int add_arrays(int N, float * a, float * b, Supernova * c, struct LLSupernova * d, float * H_OUT ){
+// Supernova * c, struct LLSupernova * d,
+int add_arrays(int Narr, float * arr, float * second, float * H_OUT ){
+    /*
     for (int i = 0; i<N; i++){
         H_OUT[i]= a[i]+b[i];
     }
 
-    
-    int arr[5],second[5];
-    int Narr=5,subNarr=0;
-    
-    // make sure the array is 0'd out
 
+    int Narr=5;
+    float arr[5],second[5];
 
     arr[0]=5;
     arr[1]=10;
@@ -134,6 +119,7 @@ int add_arrays(int N, float * a, float * b, Supernova * c, struct LLSupernova * 
     second[2]=3;
     second[3]=4;
     second[4]=5;
+    */
 
     printArray(arr,Narr);
     printArray(second,Narr);
@@ -156,10 +142,10 @@ int add_arrays(int N, float * a, float * b, Supernova * c, struct LLSupernova * 
     getIndicesFromFlags(NGBFlags,Narr,NGBIndices);
 
     // allocate the buffer array
-    int * sub_arr;
-    int * subsecond;
-    sub_arr=(int*)malloc(numNGB*sizeof(int));
-    subsecond=(int*)malloc(numNGB*sizeof(int));
+    float * sub_arr;
+    float * subsecond;
+    sub_arr=(float*)malloc(numNGB*sizeof(float));
+    subsecond=(float*)malloc(numNGB*sizeof(float));
 
 
     // extract the sub arrays from their indices
@@ -170,14 +156,18 @@ int add_arrays(int N, float * a, float * b, Supernova * c, struct LLSupernova * 
     extractSubarrayWithIndices(arr,sub_arr,NGBIndices,Narr,numNGB,1);
     extractSubarrayWithIndices(second,subsecond,NGBIndices,Narr,numNGB,0);
     
-    printArray(NGBFlags,Narr);
-    printArray(NGBIndices,numNGB);
+    printIntArray(NGBFlags,Narr);
+    printIntArray(NGBIndices,numNGB);
+    printf("subarr \t");
     printArray(sub_arr,numNGB);
+
+    printf("subsec \t");
     printArray(subsecond,numNGB);
 
     printf("------------------\n");
 
 
+    /*
     c->x=5.0;
     c->y=20.0;
 
@@ -195,6 +185,7 @@ int add_arrays(int N, float * a, float * b, Supernova * c, struct LLSupernova * 
     d->next_LLSN->next_LLSN = initialize_LLSupernova(29,13); 
 
     //printf("Successfully set next LLSupernova! \n");
+    */
 
     return 0;
 }
