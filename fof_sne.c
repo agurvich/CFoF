@@ -162,7 +162,11 @@ int add_arrays(int N, float * a, float * b, Supernova * c, struct LLSupernova * 
     subsecond=(int*)malloc(numNGB*sizeof(int));
 
 
-    printArray(NGBIndices,numNGB);
+    // extract the sub arrays from their indices
+        // only need to recalculate NGB indices on the first pass 
+        // and could in principal have a separate function that does this
+        // but I think this is easier to wrap one's head around
+        // essentially it's just if NGBFlags[j] && NGBFlags[N-1-j] -> NGBIndices[N-1-j]=j
     extractSubarrayWithIndices(arr,sub_arr,NGBIndices,Narr,numNGB,1);
     extractSubarrayWithIndices(second,subsecond,NGBIndices,Narr,numNGB,0);
     
