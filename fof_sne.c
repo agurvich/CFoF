@@ -35,7 +35,7 @@ int popArray(int * array, int index,int *Narr){
 }
 
 int twofunc(int var){
-    return var > 5;
+    return var > 2;
 }
 
 //
@@ -47,27 +47,23 @@ void * popSubset(
     for (int i=0; i<*Narr;i++){
         if (boolfunc(array[i])){
             boolflags[i]=1;
-            // add the value to the sub_array
-            sub_array[*subNarr]=array[i];
 
-            (*subNarr)++;
+            // delete this particle by replacing it with the last particle
+            // since the order doesn't matter, it's all good
+            //array[i]=array[*Narr-*subNarr-1];
+            //(*subNarr)++;
         }
-        else if (*subNarr > 0){
-            // we've removed something, so we should shift the array
-            array[i-*subNarr]=array[i];
-        } 
-        
     }
     // reduce the size by the number of elements popped
-    *Narr-=*subNarr;
+    //*Narr-=*subNarr;
 
 }
 
-void fillFromFlags(int * arr, int Narr, int * subarr, int * flags){
+void getIndicesFromFlags(int * arr, int Narr, int * subarr, int * flags){
     int filled=0;
     for (int i=0; i<Narr;i++){
         if (flags[i]){
-            subarr[filled]=arr[i];
+            subarr[filled]=i;
             filled++;
         }
         // need to shift this array 
@@ -124,7 +120,7 @@ int add_arrays(int N, float * a, float * b, Supernova * c, struct LLSupernova * 
     printf("------------------\n");
 
     subsecond=(int*)malloc(subNarr*sizeof(int));
-    fillFromFlags(second,Narr+subNarr,subsecond,boolflags);
+    //fillFromFlags(second,Narr+subNarr,subsecond,boolflags);
     printArray(second,Narr);
     printf("and now the subsecond array!\n");
     printArray(subsecond,subNarr);
