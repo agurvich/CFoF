@@ -192,7 +192,10 @@ struct SupernovaCluster * findFriends(
     int Nremain=Narr-numNGB;
     int Nadded,numNewNGB;
     int cur_ngb=1; // don't need to check the first neighbor, we just did that above
+    printf("Looking for nearest neighbors");
     while (cur_ngb < numNGB){
+        // add a dot for every loop, haha
+        printf(" . ");
         Nadded=0;
         // reset the first Nremain elements NGB flags and indices array
         // dangerous if you made a typo below, but efficient otherwise
@@ -251,7 +254,9 @@ struct SupernovaCluster * findFriends(
             Nremain-=Nadded;
         } //if Nadded
     } //while cur_ngb < numNGB
+    printf(" finished.\n");
 
+    printf("Building the SN cluster...");
     struct SupernovaCluster *new_cluster = malloc(sizeof(struct SupernovaCluster)); 
 
     // set the number of neighbors in the cluster
@@ -264,8 +269,15 @@ struct SupernovaCluster * findFriends(
     new_cluster->zs=(float*)malloc(numNGB*sizeof(float));
     new_cluster->ids=(float*)malloc(numNGB*sizeof(float));
     new_cluster->linkingLengths=(float*)malloc(numNGB*sizeof(float));
-    //TODO memcopy from the buffer to the new_cluster array
- 
+    
+    //memcopy from the buffer to the new_cluster array
+    memcpy((void *)new_cluster->xs,(void *)buffer_xs, numNGB);
+    memcpy((void *)new_cluster->ys,(void *)buffer_ys, numNGB);
+    memcpy((void *)new_cluster->zs,(void *)buffer_zs, numNGB);
+    memcpy((void *)new_cluster->ids,(void *)buffer_ids, numNGB);
+    memcpy((void *)new_cluster->linkingLengths,(void *)linkingLengths, numNGB);
+
+    printf("... finished.\n");
     return new_cluster;
 
 }// void findFriends
