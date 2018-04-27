@@ -113,6 +113,83 @@ void printIntArray(int * arr,int Narr){
     printf("\n");
 }
 
+int findFriends(
+    float * point,
+    float * xs, float * ys, float * zs, 
+    float * linkingLengths,
+    float * ids,
+    int Narr,
+    int * pnumNGB){
+
+    // initialize NGB variables
+    int * NGBFlags;
+    int * NGBIndices;
+
+    float * dists;
+
+    
+    float * sub_arr;
+    float * subsecond;
+    
+    //numNGB=0;
+
+    // allocate ngbflags memory
+    NGBFlags=(int*)malloc(Narr*sizeof(int));
+    memset(NGBFlags,0,Narr*sizeof(int));
+
+
+    // find the neighbor indices
+
+    dists = (float *) malloc(Narr*sizeof(float));
+    // calculate the distance to each point
+    calculateDists(point,xs,ys,zs,Narr,dists);
+    //printArray(xs,Narr);
+    //printArray(ys,Narr);
+    //printArray(zs,Narr);
+    //printf("------------------\n");
+    printArray(dists,Narr);
+    findNGBFlags(
+        Narr,
+        dists,
+        linkingLengths,linkingLengths[0],
+        NGBFlags,pnumNGB);
+
+
+    printIntArray(NGBFlags,Narr);
+    
+    // allocate memory for, and find, NGB indices
+    NGBIndices=(int*)malloc(*pnumNGB*sizeof(int));
+    getIndicesFromFlags(NGBFlags,Narr,NGBIndices);
+    //printIntArray(NGBIndices,numNGB);
+
+    // allocate the buffer array
+    sub_arr=(float*)malloc(*pnumNGB*sizeof(float));
+    subsecond=(float*)malloc(*pnumNGB*sizeof(float));
+
+
+    // extract the sub arrays from their indices
+        // only need to recalculate NGB indices on the first pass 
+        // and could in principal have a separate function that does this
+        // but I think this is easier to wrap one's head around
+        // essentially it's just if NGBFlags[j] && NGBFlags[N-1-j] -> NGBIndices[N-1-j]=j
+    extractSubarrayWithIndices(dists,sub_arr,NGBIndices,Narr,*pnumNGB,1);
+    extractSubarrayWithIndices(xs,subsecond,NGBIndices,Narr,*pnumNGB,0);
+    extractSubarrayWithIndices(ys,subsecond,NGBIndices,Narr,*pnumNGB,0);
+    extractSubarrayWithIndices(zs,subsecond,NGBIndices,Narr,*pnumNGB,0);
+    extractSubarrayWithIndices(ids,subsecond,NGBIndices,Narr,*pnumNGB,0);
+    
+    printIntArray(NGBFlags,Narr);
+    printIntArray(NGBIndices,*pnumNGB);
+    printf("dists \t");
+    printArray(sub_arr,*pnumNGB);
+
+    printf("ids \t");
+    printArray(subsecond,*pnumNGB);
+
+    printArray(ids,Narr-*pnumNGB);
+    return *pnumNGB;
+}
+
 // Supernova * c, struct LLSupernova * d,
 int FoFNGB(
     int Narr,
@@ -148,86 +225,30 @@ int FoFNGB(
     float point[3];
 
     int numNGB;
-    int * NGBFlags;
-    int * NGBIndices;
-
-    float * dists;
-
-    
-    float * sub_arr;
-    float * subsecond;
 
     while (Narr > 0){
+        numNGB=0;
         // take our point to be the first SNe in the list
         point[0]=xs[0];
         point[1]=ys[0];
         point[2]=zs[0];
 
-        //printArray(arr,Narr);
-        //printArray(second,Narr);
         printf("------------------\n");
 
-        // initialize NGB variables
-        numNGB=0;
-
-        // allocate ngbflags memory
-        NGBFlags=(int*)malloc(Narr*sizeof(int));
-        memset(NGBFlags,0,Narr*sizeof(int));
-
-
-        // find the neighbor indices
-
-        dists = (float *) malloc(Narr*sizeof(float));
-        // calculate the distance to each point
-        calculateDists(point,xs,ys,zs,Narr,dists);
-        //printArray(xs,Narr);
-        //printArray(ys,Narr);
-        //printArray(zs,Narr);
-        //printf("------------------\n");
-        printArray(dists,Narr);
-        findNGBFlags(
+        numNGB = findFriends(
+            point,
+            xs,ys,zs,
+            linkingLengths,
+            ids,
             Narr,
-            dists,
-            linkingLengths,linkingLengths[0],
-            NGBFlags,&numNGB);
-
-
-        printIntArray(NGBFlags,Narr);
-        
-        // allocate memory for, and find, NGB indices
-        NGBIndices=(int*)malloc(numNGB*sizeof(int));
-        getIndicesFromFlags(NGBFlags,Narr,NGBIndices);
-        //printIntArray(NGBIndices,numNGB);
-
-        // allocate the buffer array
-        sub_arr=(float*)malloc(numNGB*sizeof(float));
-        subsecond=(float*)malloc(numNGB*sizeof(float));
-
-
-        // extract the sub arrays from their indices
-            // only need to recalculate NGB indices on the first pass 
-            // and could in principal have a separate function that does this
-            // but I think this is easier to wrap one's head around
-            // essentially it's just if NGBFlags[j] && NGBFlags[N-1-j] -> NGBIndices[N-1-j]=j
-        extractSubarrayWithIndices(dists,sub_arr,NGBIndices,Narr,numNGB,1);
-        extractSubarrayWithIndices(xs,subsecond,NGBIndices,Narr,numNGB,0);
-        extractSubarrayWithIndices(ys,subsecond,NGBIndices,Narr,numNGB,0);
-        extractSubarrayWithIndices(zs,subsecond,NGBIndices,Narr,numNGB,0);
-        extractSubarrayWithIndices(ids,subsecond,NGBIndices,Narr,numNGB,0);
-        
-        printIntArray(NGBFlags,Narr);
-        printIntArray(NGBIndices,numNGB);
-        printf("dists \t");
-        printArray(sub_arr,numNGB);
-
-        printf("ids \t");
-        printArray(subsecond,numNGB);
-
+            &numNGB);
 
         Narr-=numNGB;
-        printf("------------------\n");
         printf("%d many elements remain\n",Narr);
-        printArray(ids,Narr);
+
+        printf("------------------\n");
+
+
     } // while (Narr > 0)
 
 
