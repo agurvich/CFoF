@@ -134,7 +134,7 @@ struct SupernovaCluster * findFriends(
     // initialize NGB variables
     int * NGBFlags;
     int * NGBIndices;
-    int numNGB;
+    int numNGB=0;
 
     float * dists;
 
@@ -142,8 +142,6 @@ struct SupernovaCluster * findFriends(
     float * sub_arr;
     float * subsecond;
     
-    //numNGB=0;
-
     // allocate ngbflags memory
     NGBFlags=(int*)malloc(Narr*sizeof(int));
     memset(NGBFlags,0,Narr*sizeof(int));
@@ -165,7 +163,6 @@ struct SupernovaCluster * findFriends(
         linkingLengths,linkingLengths[0],
         NGBFlags,&numNGB);
 
-
     // set the number of neighbors in the cluster
     new_cluster->numNGB = numNGB;
 
@@ -177,6 +174,7 @@ struct SupernovaCluster * findFriends(
     //printIntArray(NGBIndices,numNGB);
 
     // allocate the cluster arrays
+    
     sub_arr=(float*)malloc(numNGB*sizeof(float));
     new_cluster->xs=(float*)malloc(numNGB*sizeof(float));
     new_cluster->ys=(float*)malloc(numNGB*sizeof(float));
@@ -184,18 +182,17 @@ struct SupernovaCluster * findFriends(
     new_cluster->ids=(float*)malloc(numNGB*sizeof(float));
     new_cluster->linkingLengths=(float*)malloc(numNGB*sizeof(float));
 
-
-
     // extract the sub arrays from their indices
         // only need to recalculate NGB indices on the first pass 
         // and could in principal have a separate function that does this
         // but I think this is easier to wrap one's head around
         // essentially it's just if NGBFlags[j] && NGBFlags[N-1-j] -> NGBIndices[N-1-j]=j
     extractSubarrayWithIndices(dists,sub_arr,NGBIndices,Narr,numNGB,1);
-    extractSubarrayWithIndices(xs,subsecond,NGBIndices,Narr,numNGB,0);
-    extractSubarrayWithIndices(ys,subsecond,NGBIndices,Narr,numNGB,0);
-    extractSubarrayWithIndices(zs,subsecond,NGBIndices,Narr,numNGB,0);
-    extractSubarrayWithIndices(ids,subsecond,NGBIndices,Narr,numNGB,0);
+    extractSubarrayWithIndices(xs,new_cluster->xs,NGBIndices,Narr,numNGB,0);
+    extractSubarrayWithIndices(ys,new_cluster->ys,NGBIndices,Narr,numNGB,0);
+    extractSubarrayWithIndices(zs,new_cluster->zs,NGBIndices,Narr,numNGB,0);
+    extractSubarrayWithIndices(ids,new_cluster->ids,NGBIndices,Narr,numNGB,0);
+    extractSubarrayWithIndices(linkingLengths,new_cluster->linkingLengths,NGBIndices,Narr,numNGB,0);
     
     printIntArray(NGBFlags,Narr);
     printIntArray(NGBIndices,numNGB);
@@ -203,9 +200,10 @@ struct SupernovaCluster * findFriends(
     printArray(sub_arr,numNGB);
 
     printf("ids \t");
-    printArray(subsecond,numNGB);
+    printArray(new_cluster->ids,numNGB);
 
     printArray(ids,Narr-numNGB);
+    
     return new_cluster;
 }
 
@@ -265,7 +263,7 @@ int FoFNGB(
 
         Narr-=new_cluster->numNGB;
         printf("%d many elements remain\n",Narr);
-        printf("%d return val was\n",returnVal);
+        printf("%d many neighbors found\n",new_cluster->numNGB);
 
         printf("------------------\n");
 
