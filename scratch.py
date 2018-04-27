@@ -37,13 +37,16 @@ print (x-x[0])**2+(y-y[0])**2+(z-z[0])**2
 """
 
 ## fixed linking length of .1, for now
-linkingLengths = np.ones(NSNe,dtype='f')/10.
+linkingLengths = np.ones(NSNe,dtype='f')*50.
 
 ## launch times, fixed at 1 for now
 launchTimes = np.ones(NSNe,dtype='f')
 
 ## cooling times 
 coolingTimes = np.ones(NSNe,dtype='f')
+
+## ids, just integers now 
+ids = np.arange(NSNe,dtype='f')
 
 
 import ctypes
@@ -86,6 +89,7 @@ c_obj.FoFNGB(
     launchTimes.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
     coolingTimes.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
     linkingLengths.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
+    ids.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
     a.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
     b.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
     #ctypes.byref(c),
