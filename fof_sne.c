@@ -44,24 +44,6 @@ struct LLSupernova * initialize_LLSupernova(float argx, float argy){
 };
 
 
-int fillFlags(float * point, 
-    float * xs, float * ys,float * zs,
-    float * linkingLengths, float link_node,
-    int Narr){
-
-    int numNGB;
-    dists = (float *) malloc(Narr*sizeof(float));
-    // calculate the distance to each point
-    calculateDists(point,xs,ys,zs,Narr,dists);
-
-    //printArray(dists,Narr);
-    findNGBFlags(
-        Narr,
-        dists,
-        linkingLengths,link_node,
-        NGBFlags,&numNGB);
-}
-
 void * findNGBFlags(
     int Narr,
     float * dists,
@@ -76,6 +58,35 @@ void * findNGBFlags(
     }
 }
 
+void calculateDists(float * point, float * xs, float * ys, float * zs,int Narr, float * dists){
+    for (int i =0; i<Narr; i++){
+        float dx = point[0]-xs[i];
+        float dy = point[1]-ys[i];
+        float dz = point[2]-zs[i];
+        dists[i]=dx*dx + dy*dy + dz*dz;
+    }
+}
+
+int fillFlags(
+    float * point, 
+    float * xs, float * ys,float * zs,
+    float * linkingLengths, float link_node,
+    int Narr, int * NGBFlags){
+
+    int numNGB;
+    float * dists = (float *) malloc(Narr*sizeof(float));
+    // calculate the distance to each point
+    calculateDists(point,xs,ys,zs,Narr,dists);
+
+    //printArray(dists,Narr);
+    findNGBFlags(
+        Narr,
+        dists,
+        linkingLengths,link_node,
+        NGBFlags,&numNGB);
+}
+
+
 void getIndicesFromFlags(int * NGBFlags, int Narr, int * NGBIndices){
     int filled=0;
     for (int i=0; i<Narr;i++){
@@ -83,15 +94,6 @@ void getIndicesFromFlags(int * NGBFlags, int Narr, int * NGBIndices){
             NGBIndices[filled]=i;
             filled++;
         }
-    }
-}
-
-void calculateDists(float * point, float * xs, float * ys, float * zs,int Narr, float * dists){
-    for (int i =0; i<Narr; i++){
-        float dx = point[0]-xs[i];
-        float dy = point[1]-ys[i];
-        float dz = point[2]-zs[i];
-        dists[i]=dx*dx + dy*dy + dz*dz;
     }
 }
 
@@ -164,15 +166,16 @@ struct SupernovaCluster * findFriends(
 
     numNGB=fillFlags(
         point,
-        xs,ys,zs
-        linkingLengths,linkingLengths[0]);
+        xs,ys,zs,
+        linkingLengths,linkingLengths[0],
+        Narr,NGBFlags);
     
     // "worst case scenario", all the particles are in this cluster
-    buffer_xs=(float*)malloc(Narr*sizeof(float));
-    buffer_ys=(float*)malloc(Narr*sizeof(float));
-    buffer_zs=(float*)malloc(Narr*sizeof(float));
-    buffer_ids=(float*)malloc(Narr*sizeof(float));
-    buffer_linkingLengths=(float*)malloc(Narr*sizeof(float));
+    float * buffer_xs=(float*)malloc(Narr*sizeof(float));
+    float * buffer_ys=(float*)malloc(Narr*sizeof(float));
+    float * buffer_zs=(float*)malloc(Narr*sizeof(float));
+    float * buffer_ids=(float*)malloc(Narr*sizeof(float));
+    float * buffer_linkingLengths=(float*)malloc(Narr*sizeof(float));
 
     // extract the sub arrays from their indices
         // only need to recalculate NGB indices on the first pass 
@@ -198,9 +201,9 @@ struct SupernovaCluster * findFriends(
         // start the loop at the first friend (of friend (of friend ...)) that we haven't checked
         //TODO pragma omp parallel accumulate Nadded accumulate private point
         for (int j=cur_ngb; j<numNGB; j++){
-            point[0]=buffer_xs[j]
-            point[1]=buffer_ys[j]
-            point[2]=buffer_zs[j]
+            point[0]=buffer_xs[j];
+            point[1]=buffer_ys[j];
+            point[2]=buffer_zs[j];
         
             // this is slightly inefficient in the case where one remaining point
                 // is multiple neighbors' friend. Since we just set the flag to 1 
@@ -208,8 +211,9 @@ struct SupernovaCluster * findFriends(
                 // time calculating the distance a few times
             Nadded+= fillFlags(
                 point,
-                xs,ys,zs
-                linkingLengths,linkingLengths[j]);
+                xs,ys,zs,
+                linkingLengths,linkingLengths[j],
+                Nremain,NGBFlags);
 
             // increment the counter that we've checked this neighbor and added its friends
 
