@@ -4,6 +4,20 @@
 #include <math.h>
 
 
+void printArray(float * arr,int Narr){
+    for (int i=0; i< Narr; i++){
+        printf("%.2f\t",arr[i]);
+    }
+    printf("\n");
+}
+
+void printIntArray(int * arr,int Narr){
+    for (int i=0; i< Narr; i++){
+        printf("%d\t",arr[i]);
+    }
+    printf("\n");
+}
+
 struct SupernovaCluster{
     float * xs;
     float * ys;
@@ -70,20 +84,29 @@ void calculateDists(float * point, float * xs, float * ys, float * zs,int Narr, 
 int fillFlags(
     float * point, 
     float * xs, float * ys,float * zs,
+    float * ids,
     float * linkingLengths, float link_node,
     int Narr, int * NGBFlags){
 
-    int numNGB;
+    int numNGB=0;
     float * dists = (float *) malloc(Narr*sizeof(float));
     // calculate the distance to each point
     calculateDists(point,xs,ys,zs,Narr,dists);
 
-    //printArray(dists,Narr);
+    printArray(ids,Narr);
+    printArray(dists,Narr);
+    printArray(point,3);
+    printArray(xs,Narr);
+    printArray(ys,Narr);
+    printArray(zs,Narr);
+
     findNGBFlags(
         Narr,
         dists,
         linkingLengths,link_node,
         NGBFlags,&numNGB);
+    printf("Found %d friends\n",numNGB);
+    return numNGB;
 }
 
 
@@ -102,6 +125,7 @@ void extractSubarrayWithIndices(
     int * NGBIndices, 
     int Narray, int numNGB,
     int checkNGBIndices){
+
     for (int i=0; i<numNGB; i++){
         int ngbindex = NGBIndices[i];
         //extract the value
@@ -125,20 +149,6 @@ void extractSubarrayWithIndices(
             }
         }
     }
-}
-
-void printArray(float * arr,int Narr){
-    for (int i=0; i< Narr; i++){
-        printf("%.2f\t",arr[i]);
-    }
-    printf("\n");
-}
-
-void printIntArray(int * arr,int Narr){
-    for (int i=0; i< Narr; i++){
-        printf("%d\t",arr[i]);
-    }
-    printf("\n");
 }
 
 struct SupernovaCluster * findFriends(
@@ -167,21 +177,34 @@ struct SupernovaCluster * findFriends(
     numNGB=fillFlags(
         point,
         xs,ys,zs,
+        ids,
         linkingLengths,linkingLengths[0],
         Narr,NGBFlags);
+
+    // convert flags to indices
+    NGBIndices=(int*)malloc(numNGB*sizeof(int));
+    getIndicesFromFlags(NGBFlags,Narr,NGBIndices);
     
     // "worst case scenario", all the particles are in this cluster
     float * buffer_xs=(float*)malloc(Narr*sizeof(float));
+    memset(buffer_xs,0,Narr*sizeof(int));
     float * buffer_ys=(float*)malloc(Narr*sizeof(float));
+    memset(buffer_ys,0,Narr*sizeof(int));
     float * buffer_zs=(float*)malloc(Narr*sizeof(float));
+    memset(buffer_zs,0,Narr*sizeof(int));
     float * buffer_ids=(float*)malloc(Narr*sizeof(float));
+    memset(buffer_ids,0,Narr*sizeof(int));
     float * buffer_linkingLengths=(float*)malloc(Narr*sizeof(float));
+    memset(buffer_linkingLengths,0,Narr*sizeof(int));
+
 
     // extract the sub arrays from their indices
         // only need to recalculate NGB indices on the first pass 
         // and could in principal have a separate function that does this
         // but I think this is easier to wrap one's head around
         // essentially it's just if NGBFlags[j] && NGBFlags[N-1-j] -> NGBIndices[N-1-j]=j
+
+
     extractSubarrayWithIndices(xs,buffer_xs,NGBIndices,Narr,numNGB,1);
     extractSubarrayWithIndices(ys,buffer_ys,NGBIndices,Narr,numNGB,0);
     extractSubarrayWithIndices(zs,buffer_zs,NGBIndices,Narr,numNGB,0);
@@ -192,10 +215,11 @@ struct SupernovaCluster * findFriends(
     int Nremain=Narr-numNGB;
     int Nadded,numNewNGB;
     int cur_ngb=1; // don't need to check the first neighbor, we just did that above
-    printf("Looking for nearest neighbors");
+    printf("Looking for nearest neighbors\n");
     while (cur_ngb < numNGB){
+        printf("Current cluster composition:\t");
+        printArray(buffer_ids,numNGB);
         // add a dot for every loop, haha
-        printf(" . ");
         Nadded=0;
         // reset the first Nremain elements NGB flags and indices array
         // dangerous if you made a typo below, but efficient otherwise
@@ -212,46 +236,55 @@ struct SupernovaCluster * findFriends(
                 // is multiple neighbors' friend. Since we just set the flag to 1 
                 // the race condition is not important, and we just waste a little
                 // time calculating the distance a few times
-            Nadded+= fillFlags(
+            fillFlags(
                 point,
                 xs,ys,zs,
+                ids,
                 linkingLengths,linkingLengths[j],
                 Nremain,NGBFlags);
-
-            // increment the counter that we've checked this neighbor and added its friends
-
         }
+        
+        // find out how many we actually added
+        for (int k=0; k<Nremain; k++) Nadded+=NGBFlags[k];
         
         // set cur_ngb to the end of the list
         cur_ngb=numNGB;
 
         if (Nadded){
-            // find new NGB indices
+            printf("--------------\n");
+            printf("Adding the friends we found\n");
+            //reset the NGB indices 
+            free(NGBIndices);
+            NGBIndices=(int*)malloc(Nadded*sizeof(int));
             memset(NGBIndices,0,Nadded*sizeof(int));
+
+            // find new NGB indices
             getIndicesFromFlags(NGBFlags,Nremain,NGBIndices);
 
             // extract all our new friends into the buffer, removing them from the main array
             // increment the pointer to point to the first open slot of the buffer
             extractSubarrayWithIndices(
-                xs,buffer_xs+sizeof(float)*numNGB,
+                xs,&buffer_xs[numNGB],
                 NGBIndices,Nremain,Nadded,1);
             extractSubarrayWithIndices(
-                ys,buffer_ys+sizeof(float)*numNGB,
+                ys,&buffer_ys[numNGB],
                 NGBIndices,Nremain,Nadded,0);
             extractSubarrayWithIndices(
-                zs,buffer_zs+sizeof(float)*numNGB,
+                zs,&buffer_zs[numNGB],
                 NGBIndices,Nremain,Nadded,0);
             extractSubarrayWithIndices(
-                ids,buffer_ids+sizeof(float)*numNGB,
+                ids,&buffer_ids[numNGB],
                 NGBIndices,Nremain,Nadded,0);
             extractSubarrayWithIndices(
-                linkingLengths+sizeof(float)*numNGB,buffer_linkingLengths,
+                &linkingLengths[numNGB],buffer_linkingLengths,
                 NGBIndices,Nremain,Nadded,0);
 
             // update the size of the neighbors that live in the buffer
             // and the remaining particles
             numNGB+=Nadded;
             Nremain-=Nadded;
+            printf("Now looking for the new friends' neighbors!\n");
+            printf("--------------\n");
         } //if Nadded
     } //while cur_ngb < numNGB
     printf(" finished.\n");
@@ -271,14 +304,16 @@ struct SupernovaCluster * findFriends(
     new_cluster->linkingLengths=(float*)malloc(numNGB*sizeof(float));
     
     //memcopy from the buffer to the new_cluster array
-    memcpy((void *)new_cluster->xs,(void *)buffer_xs, numNGB);
-    memcpy((void *)new_cluster->ys,(void *)buffer_ys, numNGB);
-    memcpy((void *)new_cluster->zs,(void *)buffer_zs, numNGB);
-    memcpy((void *)new_cluster->ids,(void *)buffer_ids, numNGB);
-    memcpy((void *)new_cluster->linkingLengths,(void *)linkingLengths, numNGB);
-
+    memcpy((void *)new_cluster->xs,(void *)buffer_xs, numNGB*sizeof(float));
+    memcpy((void *)new_cluster->ys,(void *)buffer_ys, numNGB*sizeof(float));
+    memcpy((void *)new_cluster->zs,(void *)buffer_zs, numNGB*sizeof(float));
+    memcpy((void *)new_cluster->ids,(void *)buffer_ids, numNGB*sizeof(float));
+    memcpy((void *)new_cluster->linkingLengths,(void *)linkingLengths, numNGB*sizeof(float));
     printf("... finished.\n");
+    printArray(new_cluster->ids,numNGB);
+
     return new_cluster;
+
 
 }// void findFriends
 
