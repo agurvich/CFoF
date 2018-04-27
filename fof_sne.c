@@ -128,6 +128,7 @@ struct SupernovaCluster * findFriends(
     int Narr,
     int cluster_id){
 
+    // declare all our variables
     struct SupernovaCluster *new_cluster = malloc(sizeof(struct SupernovaCluster)); 
     new_cluster->cluster_id=cluster_id;
 
@@ -136,27 +137,21 @@ struct SupernovaCluster * findFriends(
     int * NGBIndices;
     int numNGB=0;
 
+    // declare temporary variables
     float * dists;
-
-    
     float * sub_arr;
-    float * subsecond;
     
     // allocate ngbflags memory
     NGBFlags=(int*)malloc(Narr*sizeof(int));
     memset(NGBFlags,0,Narr*sizeof(int));
-
 
     // find the neighbor indices
 
     dists = (float *) malloc(Narr*sizeof(float));
     // calculate the distance to each point
     calculateDists(point,xs,ys,zs,Narr,dists);
-    //printArray(xs,Narr);
-    //printArray(ys,Narr);
-    //printArray(zs,Narr);
-    //printf("------------------\n");
-    printArray(dists,Narr);
+
+    //printArray(dists,Narr);
     findNGBFlags(
         Narr,
         dists,
@@ -166,15 +161,13 @@ struct SupernovaCluster * findFriends(
     // set the number of neighbors in the cluster
     new_cluster->numNGB = numNGB;
 
-    printIntArray(NGBFlags,Narr);
+    //printIntArray(NGBFlags,Narr);
     
     // allocate memory for, and find, NGB indices
     NGBIndices=(int*)malloc(numNGB*sizeof(int));
     getIndicesFromFlags(NGBFlags,Narr,NGBIndices);
-    //printIntArray(NGBIndices,numNGB);
 
     // allocate the cluster arrays
-    
     sub_arr=(float*)malloc(numNGB*sizeof(float));
     new_cluster->xs=(float*)malloc(numNGB*sizeof(float));
     new_cluster->ys=(float*)malloc(numNGB*sizeof(float));
@@ -194,6 +187,7 @@ struct SupernovaCluster * findFriends(
     extractSubarrayWithIndices(ids,new_cluster->ids,NGBIndices,Narr,numNGB,0);
     extractSubarrayWithIndices(linkingLengths,new_cluster->linkingLengths,NGBIndices,Narr,numNGB,0);
     
+    /*
     printIntArray(NGBFlags,Narr);
     printIntArray(NGBIndices,numNGB);
     printf("dists \t");
@@ -203,7 +197,7 @@ struct SupernovaCluster * findFriends(
     printArray(new_cluster->ids,numNGB);
 
     printArray(ids,Narr-numNGB);
-    
+    */
     return new_cluster;
 }
 
@@ -216,29 +210,8 @@ int FoFNGB(
     float * ids,
     float * arr, float * second, 
     float * H_OUT ){
-    /*
-    for (int i = 0; i<N; i++){
-        H_OUT[i]= a[i]+b[i];
-    }
 
 
-    int Narr=5;
-    float arr[5],second[5];
-
-    arr[0]=5;
-    arr[1]=10;
-    arr[2]=1;
-    arr[3]=7;
-    arr[4]=0;
-
-    second[0]=1;
-    second[1]=2;
-    second[2]=3;
-    second[3]=4;
-    second[4]=5;
-    */
-
-    // declare all our variables
     float point[3];
 
     int returnVal;
@@ -251,8 +224,9 @@ int FoFNGB(
         point[1]=ys[0];
         point[2]=zs[0];
 
-        printf("------------------\n");
-
+        printf("------------------------------------------------------\n");
+        printf("Working on cluster %d\n",cluster_id);
+        printf("------------------------------------------------------\n");
         struct SupernovaCluster *new_cluster = findFriends(
             point,
             xs,ys,zs,
@@ -262,10 +236,9 @@ int FoFNGB(
             cluster_id);
 
         Narr-=new_cluster->numNGB;
-        printf("%d many elements remain\n",Narr);
-        printf("%d many neighbors found\n",new_cluster->numNGB);
-
-        printf("------------------\n");
+        printf("%d members found\n",new_cluster->numNGB);
+        printArray(new_cluster->ids,new_cluster->numNGB);
+        printf("%d elements remain\n",Narr);
 
         cluster_id++;
 
