@@ -4,13 +4,20 @@
 #include <math.h>
 
 
-/*
 struct SupernovaCluster{
+    float * xs;
+    float * ys;
+    float * zs;
+    float * ids;
+    float * linkingLengths;
+    int numNGB;
+    int cluster_id;
+};
 
-}
-
+/*
 struct SupernovaCluster * initialize_SupernovaCluster(
     float xs, float ys, float zs){
+    struct LLSupernova *new_LLSN = malloc(sizeof(struct LLSupernova)); 
 }
 */
 
@@ -113,17 +120,21 @@ void printIntArray(int * arr,int Narr){
     printf("\n");
 }
 
-int findFriends(
+struct SupernovaCluster * findFriends(
     float * point,
     float * xs, float * ys, float * zs, 
     float * linkingLengths,
     float * ids,
     int Narr,
-    int * pnumNGB){
+    int cluster_id){
+
+    struct SupernovaCluster *new_cluster = malloc(sizeof(struct SupernovaCluster)); 
+    new_cluster->cluster_id=cluster_id;
 
     // initialize NGB variables
     int * NGBFlags;
     int * NGBIndices;
+    int numNGB;
 
     float * dists;
 
@@ -152,19 +163,27 @@ int findFriends(
         Narr,
         dists,
         linkingLengths,linkingLengths[0],
-        NGBFlags,pnumNGB);
+        NGBFlags,&numNGB);
 
+
+    // set the number of neighbors in the cluster
+    new_cluster->numNGB = numNGB;
 
     printIntArray(NGBFlags,Narr);
     
     // allocate memory for, and find, NGB indices
-    NGBIndices=(int*)malloc(*pnumNGB*sizeof(int));
+    NGBIndices=(int*)malloc(numNGB*sizeof(int));
     getIndicesFromFlags(NGBFlags,Narr,NGBIndices);
     //printIntArray(NGBIndices,numNGB);
 
-    // allocate the buffer array
-    sub_arr=(float*)malloc(*pnumNGB*sizeof(float));
-    subsecond=(float*)malloc(*pnumNGB*sizeof(float));
+    // allocate the cluster arrays
+    sub_arr=(float*)malloc(numNGB*sizeof(float));
+    new_cluster->xs=(float*)malloc(numNGB*sizeof(float));
+    new_cluster->ys=(float*)malloc(numNGB*sizeof(float));
+    new_cluster->zs=(float*)malloc(numNGB*sizeof(float));
+    new_cluster->ids=(float*)malloc(numNGB*sizeof(float));
+    new_cluster->linkingLengths=(float*)malloc(numNGB*sizeof(float));
+
 
 
     // extract the sub arrays from their indices
@@ -172,22 +191,22 @@ int findFriends(
         // and could in principal have a separate function that does this
         // but I think this is easier to wrap one's head around
         // essentially it's just if NGBFlags[j] && NGBFlags[N-1-j] -> NGBIndices[N-1-j]=j
-    extractSubarrayWithIndices(dists,sub_arr,NGBIndices,Narr,*pnumNGB,1);
-    extractSubarrayWithIndices(xs,subsecond,NGBIndices,Narr,*pnumNGB,0);
-    extractSubarrayWithIndices(ys,subsecond,NGBIndices,Narr,*pnumNGB,0);
-    extractSubarrayWithIndices(zs,subsecond,NGBIndices,Narr,*pnumNGB,0);
-    extractSubarrayWithIndices(ids,subsecond,NGBIndices,Narr,*pnumNGB,0);
+    extractSubarrayWithIndices(dists,sub_arr,NGBIndices,Narr,numNGB,1);
+    extractSubarrayWithIndices(xs,subsecond,NGBIndices,Narr,numNGB,0);
+    extractSubarrayWithIndices(ys,subsecond,NGBIndices,Narr,numNGB,0);
+    extractSubarrayWithIndices(zs,subsecond,NGBIndices,Narr,numNGB,0);
+    extractSubarrayWithIndices(ids,subsecond,NGBIndices,Narr,numNGB,0);
     
     printIntArray(NGBFlags,Narr);
-    printIntArray(NGBIndices,*pnumNGB);
+    printIntArray(NGBIndices,numNGB);
     printf("dists \t");
-    printArray(sub_arr,*pnumNGB);
+    printArray(sub_arr,numNGB);
 
     printf("ids \t");
-    printArray(subsecond,*pnumNGB);
+    printArray(subsecond,numNGB);
 
-    printArray(ids,Narr-*pnumNGB);
-    return *pnumNGB;
+    printArray(ids,Narr-numNGB);
+    return new_cluster;
 }
 
 // Supernova * c, struct LLSupernova * d,
@@ -224,10 +243,11 @@ int FoFNGB(
     // declare all our variables
     float point[3];
 
-    int numNGB;
+    int returnVal;
+
+    int cluster_id=0;
 
     while (Narr > 0){
-        numNGB=0;
         // take our point to be the first SNe in the list
         point[0]=xs[0];
         point[1]=ys[0];
@@ -235,19 +255,21 @@ int FoFNGB(
 
         printf("------------------\n");
 
-        numNGB = findFriends(
+        struct SupernovaCluster *new_cluster = findFriends(
             point,
             xs,ys,zs,
             linkingLengths,
             ids,
             Narr,
-            &numNGB);
+            cluster_id);
 
-        Narr-=numNGB;
+        Narr-=new_cluster->numNGB;
         printf("%d many elements remain\n",Narr);
+        printf("%d return val was\n",returnVal);
 
         printf("------------------\n");
 
+        cluster_id++;
 
     } // while (Narr > 0)
 
