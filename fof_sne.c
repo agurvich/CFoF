@@ -43,6 +43,25 @@ struct LLSupernova * initialize_LLSupernova(float argx, float argy){
     return new_LLSN;
 };
 
+
+int fillFlags(float * point, 
+    float * xs, float * ys,float * zs,
+    float * linkingLengths, float link_node,
+    int Narr){
+
+    int numNGB;
+    dists = (float *) malloc(Narr*sizeof(float));
+    // calculate the distance to each point
+    calculateDists(point,xs,ys,zs,Narr,dists);
+
+    //printArray(dists,Narr);
+    findNGBFlags(
+        Narr,
+        dists,
+        linkingLengths,link_node,
+        NGBFlags,&numNGB);
+}
+
 void * findNGBFlags(
     int Narr,
     float * dists,
@@ -121,85 +140,131 @@ void printIntArray(int * arr,int Narr){
 }
 
 struct SupernovaCluster * findFriends(
-    float * point,
     float * xs, float * ys, float * zs, 
     float * linkingLengths,
     float * ids,
     int Narr,
     int cluster_id){
-
-    // declare all our variables
-    struct SupernovaCluster *new_cluster = malloc(sizeof(struct SupernovaCluster)); 
-    new_cluster->cluster_id=cluster_id;
-
+    
     // initialize NGB variables
     int * NGBFlags;
     int * NGBIndices;
     int numNGB=0;
 
-    // declare temporary variables
-    float * dists;
-    float * sub_arr;
-    
     // allocate ngbflags memory
     NGBFlags=(int*)malloc(Narr*sizeof(int));
     memset(NGBFlags,0,Narr*sizeof(int));
 
-    // find the neighbor indices
+    // find all the neighbors to the first point 
+    // (inclusive, so we're guaranteed to get at least one...)
+    float point[3];
+    point[0]=xs[0];
+    point[1]=ys[0];
+    point[2]=zs[0];
 
-    dists = (float *) malloc(Narr*sizeof(float));
-    // calculate the distance to each point
-    calculateDists(point,xs,ys,zs,Narr,dists);
-
-    //printArray(dists,Narr);
-    findNGBFlags(
-        Narr,
-        dists,
-        linkingLengths,linkingLengths[0],
-        NGBFlags,&numNGB);
-
-    // set the number of neighbors in the cluster
-    new_cluster->numNGB = numNGB;
-
-    //printIntArray(NGBFlags,Narr);
+    numNGB=fillFlags(
+        point,
+        xs,ys,zs
+        linkingLengths,linkingLengths[0]);
     
-    // allocate memory for, and find, NGB indices
-    NGBIndices=(int*)malloc(numNGB*sizeof(int));
-    getIndicesFromFlags(NGBFlags,Narr,NGBIndices);
-
-    // allocate the cluster arrays
-    sub_arr=(float*)malloc(numNGB*sizeof(float));
-    new_cluster->xs=(float*)malloc(numNGB*sizeof(float));
-    new_cluster->ys=(float*)malloc(numNGB*sizeof(float));
-    new_cluster->zs=(float*)malloc(numNGB*sizeof(float));
-    new_cluster->ids=(float*)malloc(numNGB*sizeof(float));
-    new_cluster->linkingLengths=(float*)malloc(numNGB*sizeof(float));
+    // "worst case scenario", all the particles are in this cluster
+    buffer_xs=(float*)malloc(Narr*sizeof(float));
+    buffer_ys=(float*)malloc(Narr*sizeof(float));
+    buffer_zs=(float*)malloc(Narr*sizeof(float));
+    buffer_ids=(float*)malloc(Narr*sizeof(float));
+    buffer_linkingLengths=(float*)malloc(Narr*sizeof(float));
 
     // extract the sub arrays from their indices
         // only need to recalculate NGB indices on the first pass 
         // and could in principal have a separate function that does this
         // but I think this is easier to wrap one's head around
         // essentially it's just if NGBFlags[j] && NGBFlags[N-1-j] -> NGBIndices[N-1-j]=j
-    extractSubarrayWithIndices(dists,sub_arr,NGBIndices,Narr,numNGB,1);
-    extractSubarrayWithIndices(xs,new_cluster->xs,NGBIndices,Narr,numNGB,0);
-    extractSubarrayWithIndices(ys,new_cluster->ys,NGBIndices,Narr,numNGB,0);
-    extractSubarrayWithIndices(zs,new_cluster->zs,NGBIndices,Narr,numNGB,0);
-    extractSubarrayWithIndices(ids,new_cluster->ids,NGBIndices,Narr,numNGB,0);
-    extractSubarrayWithIndices(linkingLengths,new_cluster->linkingLengths,NGBIndices,Narr,numNGB,0);
-    
-    /*
-    printIntArray(NGBFlags,Narr);
-    printIntArray(NGBIndices,numNGB);
-    printf("dists \t");
-    printArray(sub_arr,numNGB);
+    extractSubarrayWithIndices(xs,buffer_xs,NGBIndices,Narr,numNGB,1);
+    extractSubarrayWithIndices(ys,buffer_ys,NGBIndices,Narr,numNGB,0);
+    extractSubarrayWithIndices(zs,buffer_zs,NGBIndices,Narr,numNGB,0);
+    extractSubarrayWithIndices(ids,buffer_ids,NGBIndices,Narr,numNGB,0);
+    extractSubarrayWithIndices(linkingLengths,buffer_linkingLengths,NGBIndices,Narr,numNGB,0);
 
-    printf("ids \t");
-    printArray(new_cluster->ids,numNGB);
+    // new size of xs/ys/zs/...
+    int Nremain=Narr-numNGB;
+    int Nadded,numNewNGB;
+    int cur_ngb=1; // don't need to check the first neighbor, we just did that above
+    while (cur_ngb < numNGB){
+        Nadded=0;
+        // reset the first Nremain elements NGB flags and indices array
+        // dangerous if you made a typo below, but efficient otherwise
+        memset(NGBFlags,0,Nremain*sizeof(int));
 
-    printArray(ids,Narr-numNGB);
-    */
+        // start the loop at the first friend (of friend (of friend ...)) that we haven't checked
+        //TODO pragma omp parallel accumulate Nadded accumulate private point
+        for (int j=cur_ngb; j<numNGB; j++){
+            point[0]=buffer_xs[j]
+            point[1]=buffer_ys[j]
+            point[2]=buffer_zs[j]
+        
+            // this is slightly inefficient in the case where one remaining point
+                // is multiple neighbors' friend. Since we just set the flag to 1 
+                // the race condition is not important, and we just waste a little
+                // time calculating the distance a few times
+            Nadded+= fillFlags(
+                point,
+                xs,ys,zs
+                linkingLengths,linkingLengths[j]);
+
+            // increment the counter that we've checked this neighbor and added its friends
+
+        }
+        
+        // set cur_ngb to the end of the list
+        cur_ngb=numNGB;
+
+        if (Nadded){
+            // find new NGB indices
+            memset(NGBIndices,0,Nadded*sizeof(int));
+            getIndicesFromFlags(NGBFlags,Nremain,NGBIndices);
+
+            // extract all our new friends into the buffer, removing them from the main array
+            // increment the pointer to point to the first open slot of the buffer
+            extractSubarrayWithIndices(
+                xs,buffer_xs+sizeof(float)*numNGB,
+                NGBIndices,Nremain,Nadded,1);
+            extractSubarrayWithIndices(
+                ys,buffer_ys+sizeof(float)*numNGB,
+                NGBIndices,Nremain,Nadded,0);
+            extractSubarrayWithIndices(
+                zs,buffer_zs+sizeof(float)*numNGB,
+                NGBIndices,Nremain,Nadded,0);
+            extractSubarrayWithIndices(
+                ids,buffer_ids+sizeof(float)*numNGB,
+                NGBIndices,Nremain,Nadded,0);
+            extractSubarrayWithIndices(
+                linkingLengths+sizeof(float)*numNGB,buffer_linkingLengths,
+                NGBIndices,Nremain,Nadded,0);
+
+            // update the size of the neighbors that live in the buffer
+            // and the remaining particles
+            numNGB+=Nadded;
+            Nremain-=Nadded;
+        } //if Nadded
+    } //while cur_ngb < numNGB
+
+    struct SupernovaCluster *new_cluster = malloc(sizeof(struct SupernovaCluster)); 
+
+    // set the number of neighbors in the cluster
+    new_cluster->cluster_id=cluster_id;
+    new_cluster->numNGB = numNGB;
+
+    // allocate the cluster arrays
+    new_cluster->xs=(float*)malloc(numNGB*sizeof(float));
+    new_cluster->ys=(float*)malloc(numNGB*sizeof(float));
+    new_cluster->zs=(float*)malloc(numNGB*sizeof(float));
+    new_cluster->ids=(float*)malloc(numNGB*sizeof(float));
+    new_cluster->linkingLengths=(float*)malloc(numNGB*sizeof(float));
+    //TODO memcopy from the buffer to the new_cluster array
+ 
     return new_cluster;
-}
+
+}// void findFriends
 
 // Supernova * c, struct LLSupernova * d,
 int FoFNGB(
@@ -212,23 +277,18 @@ int FoFNGB(
     float * H_OUT ){
 
 
-    float point[3];
-
     int returnVal;
 
     int cluster_id=0;
 
     while (Narr > 0){
         // take our point to be the first SNe in the list
-        point[0]=xs[0];
-        point[1]=ys[0];
-        point[2]=zs[0];
+
 
         printf("------------------------------------------------------\n");
         printf("Working on cluster %d\n",cluster_id);
         printf("------------------------------------------------------\n");
         struct SupernovaCluster *new_cluster = findFriends(
-            point,
             xs,ys,zs,
             linkingLengths,
             ids,

@@ -12,7 +12,7 @@ from distinct_colours import get_distinct#,cm_linear,cm_plusmin
 
 from readsnap import readsnap
 
-NSNe=100
+NSNe=10
 
 a = np.linspace(1,19,NSNe)
 b = np.linspace(11,21,NSNe)
