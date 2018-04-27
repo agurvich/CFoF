@@ -26,6 +26,7 @@ struct SupernovaCluster{
     float * linkingLengths;
     int numNGB;
     int cluster_id;
+    struct SupernovaCluster  * NextCluster; 
 };
 
 /*
@@ -93,19 +94,23 @@ int fillFlags(
     // calculate the distance to each point
     calculateDists(point,xs,ys,zs,Narr,dists);
 
+#ifdef DEBUG
     printArray(ids,Narr);
     printArray(dists,Narr);
     printArray(point,3);
     printArray(xs,Narr);
     printArray(ys,Narr);
     printArray(zs,Narr);
+#endif
 
     findNGBFlags(
         Narr,
         dists,
         linkingLengths,link_node,
         NGBFlags,&numNGB);
+#ifdef DEBUG
     printf("Found %d friends\n",numNGB);
+#endif
     return numNGB;
 }
 
@@ -215,10 +220,14 @@ struct SupernovaCluster * findFriends(
     int Nremain=Narr-numNGB;
     int Nadded,numNewNGB;
     int cur_ngb=1; // don't need to check the first neighbor, we just did that above
+#ifdef DEBUG
     printf("Looking for nearest neighbors\n");
+#endif
     while (cur_ngb < numNGB){
+#ifdef DEBUG
         printf("Current cluster composition:\t");
         printArray(buffer_ids,numNGB);
+#endif
         // add a dot for every loop, haha
         Nadded=0;
         // reset the first Nremain elements NGB flags and indices array
@@ -251,8 +260,10 @@ struct SupernovaCluster * findFriends(
         cur_ngb=numNGB;
 
         if (Nadded){
+#ifdef DEBUG
             printf("--------------\n");
             printf("Adding the friends we found\n");
+#endif
             //reset the NGB indices 
             free(NGBIndices);
             NGBIndices=(int*)malloc(Nadded*sizeof(int));
@@ -283,13 +294,18 @@ struct SupernovaCluster * findFriends(
             // and the remaining particles
             numNGB+=Nadded;
             Nremain-=Nadded;
+#ifdef DEBUG
             printf("Now looking for the new friends' neighbors!\n");
             printf("--------------\n");
+#endif
         } //if Nadded
     } //while cur_ngb < numNGB
+#ifdef DEBUG
     printf(" finished.\n");
 
+
     printf("Building the SN cluster...");
+#endif
     struct SupernovaCluster *new_cluster = malloc(sizeof(struct SupernovaCluster)); 
 
     // set the number of neighbors in the cluster
@@ -309,15 +325,17 @@ struct SupernovaCluster * findFriends(
     memcpy((void *)new_cluster->zs,(void *)buffer_zs, numNGB*sizeof(float));
     memcpy((void *)new_cluster->ids,(void *)buffer_ids, numNGB*sizeof(float));
     memcpy((void *)new_cluster->linkingLengths,(void *)linkingLengths, numNGB*sizeof(float));
+#ifdef DEBUG
     printf("... finished.\n");
     printArray(new_cluster->ids,numNGB);
+#endif
 
     return new_cluster;
 
 
 }// void findFriends
 
-// Supernova * c, struct LLSupernova * d,
+// Supernova * c, ,
 int FoFNGB(
     int Narr,
     float * xs, float * ys, float * zs,
@@ -325,7 +343,8 @@ int FoFNGB(
     float * linkingLengths,
     float * ids,
     float * arr, float * second, 
-    float * H_OUT ){
+    struct SupernovaCluster * head,
+    int H_OUT ){
 
 
     int returnVal;
@@ -336,9 +355,11 @@ int FoFNGB(
         // take our point to be the first SNe in the list
 
 
+#ifdef PRETTYPRINT
         printf("------------------------------------------------------\n");
         printf("Working on cluster %d\n",cluster_id);
         printf("------------------------------------------------------\n");
+#endif
         struct SupernovaCluster *new_cluster = findFriends(
             xs,ys,zs,
             linkingLengths,
@@ -347,13 +368,20 @@ int FoFNGB(
             cluster_id);
 
         Narr-=new_cluster->numNGB;
-        printf("%d members found\n",new_cluster->numNGB);
         printArray(new_cluster->ids,new_cluster->numNGB);
+
+#ifdef PRETTYPRINT
+        printf("%d members found\n",new_cluster->numNGB);
         printf("%d elements remain\n",Narr);
+#endif
 
         cluster_id++;
+        //step the linked list
+        head->NextCluster=new_cluster;
+        head = new_cluster;
 
     } // while (Narr > 0)
+    H_OUT=cluster_id;
 
 
 
@@ -377,7 +405,7 @@ int FoFNGB(
     //printf("Successfully set next LLSupernova! \n");
     */
 
-    return 0;
+    return cluster_id;
 }
 
 

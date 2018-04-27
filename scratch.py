@@ -12,6 +12,8 @@ from distinct_colours import get_distinct#,cm_linear,cm_plusmin
 
 from readsnap import readsnap
 
+import time
+
 NSNe=10
 
 a = np.linspace(1,19,NSNe)
@@ -37,7 +39,7 @@ print (x-x[0])**2+(y-y[0])**2+(z-z[0])**2
 """
 
 ## fixed linking length of .1, for now
-linkingLengths = np.ones(NSNe,dtype='f')*50.
+linkingLengths = np.ones(NSNe,dtype='f')*50
 
 ## launch times, fixed at 1 for now
 launchTimes = np.ones(NSNe,dtype='f')
@@ -62,6 +64,20 @@ LLSupernova._fields_ = [
                 ("y", ctypes.c_float),
                 ("next_LLSN",ctypes.POINTER(LLSupernova))]
 
+class SupernovaCluster(ctypes.Structure):
+    pass
+
+SupernovaCluster._fields_ = [
+                ("xs", ctypes.POINTER(ctypes.c_float)),
+                ("ys", ctypes.POINTER(ctypes.c_float)),
+                ("zs", ctypes.POINTER(ctypes.c_float)),
+                ("ids",ctypes.POINTER(ctypes.c_float)),
+                ("linkingLengths", ctypes.POINTER(ctypes.c_float)),
+                ("numNGB",ctypes.c_int),
+                ("cluster_id",ctypes.c_int),
+                ("NextCluster",ctypes.POINTER(SupernovaCluster))
+            ]
+
 
 
 """
@@ -69,18 +85,19 @@ c = (Supernova*5)()
 c.x = 2.0
 c.y = 10.0
 
-d = LLSupernova()
+
 """
+head = SupernovaCluster()
 
 exec_call = "/home/abg6257/CFoF/fof_sne.so"
 c_obj = ctypes.CDLL(exec_call)
 
-h_out_cast=ctypes.c_float*11
+h_out_cast=ctypes.c_int
 H_OUT=h_out_cast()
 
-print "THIS IS B",b
 print "Executing c code"
-c_obj.FoFNGB(
+init_time=time.time()
+numClusters = c_obj.FoFNGB(
     ctypes.c_int(NSNe),
     x.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
     y.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
@@ -93,16 +110,21 @@ c_obj.FoFNGB(
     a.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
     b.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
     #ctypes.byref(c),
-    #ctypes.byref(d),
+
+    ctypes.byref(head),
     ctypes.byref(H_OUT))
 
 h=np.ctypeslib.as_array(H_OUT)
-print h
+print h,'many clusters found (h)'
+print numClusters,'many clusters found'
+print time.time()-init_time,'s elapsed'
+
+
+for i in xrange(numClusters):
+    print head.NextCluster.contents.ids.contents
+    head = head.NextCluster.contents
 
 """
-print c[0].x
-print c[0].y
-
 print c[1].x
 print c[1].y
 """
