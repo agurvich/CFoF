@@ -342,7 +342,6 @@ int FoFNGB(
     float * launchTimes, float * coolingTimes,
     float * linkingLengths,
     float * ids,
-    float * arr, float * second, 
     struct SupernovaCluster * head,
     int H_OUT ){
 
