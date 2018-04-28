@@ -14,7 +14,7 @@ from readsnap import readsnap
 
 import time
 
-NSNe=10
+NSNe=10000
 
 a = np.linspace(1,19,NSNe)
 b = np.linspace(11,21,NSNe)
@@ -39,7 +39,7 @@ print (x-x[0])**2+(y-y[0])**2+(z-z[0])**2
 """
 
 ## fixed linking length of .1, for now
-linkingLengths = np.ones(NSNe,dtype='f')*50
+linkingLengths = np.ones(NSNe,dtype='f')*50.0/NSNe*10.
 
 ## launch times, fixed at 1 for now
 launchTimes = np.ones(NSNe,dtype='f')
@@ -120,9 +120,23 @@ print numClusters,'many clusters found'
 print time.time()-init_time,'s elapsed'
 
 
+## skip the empty head node
+head = head.NextCluster.contents
 for i in xrange(numClusters):
-    print head.NextCluster.contents.ids.contents
-    head = head.NextCluster.contents
+    #print head.numNGB,'|',
+    #print np.ctypeslib.as_array(head.ids,shape=(head.numNGB,))
+    if i == (numClusters-2):
+        print np.ctypeslib.as_array(head.ids,shape=(head.numNGB,))
+    try:
+        if i < (numClusters-1):
+            head = head.NextCluster.contents
+    except:
+        print i,numClusters
+        raise
+    
+print "Last one:",
+print np.ctypeslib.as_array(head.ids,shape=(head.numNGB,))
+print i,numClusters
 
 """
 print c[1].x

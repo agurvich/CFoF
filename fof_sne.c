@@ -368,9 +368,9 @@ int FoFNGB(
             cluster_id);
 
         Narr-=new_cluster->numNGB;
-        printArray(new_cluster->ids,new_cluster->numNGB);
 
 #ifdef PRETTYPRINT
+        printArray(new_cluster->ids,new_cluster->numNGB);
         printf("%d members found\n",new_cluster->numNGB);
         printf("%d elements remain\n",Narr);
 #endif
@@ -382,7 +382,7 @@ int FoFNGB(
 
     } // while (Narr > 0)
     H_OUT=cluster_id;
-
+    printArray(head->ids,head->numNGB);
 
 
     /*
