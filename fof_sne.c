@@ -4,12 +4,29 @@
 #include <math.h>
 
 
+//#define DEBUG
+
 void printArray(float * arr,int Narr){
     for (int i=0; i< Narr; i++){
         printf("%.2f\t",arr[i]);
     }
     printf("\n");
 }
+
+void printArrayFixedRatio(float * arr,float divisor, int Narr){
+    for (int i=0; i< Narr; i++){
+        printf("%.2f\t",arr[i]/(divisor*divisor));
+    }
+    printf("\n");
+}
+
+void printArrayRatio(float * arr,float * arr1, int Narr){
+    for (int i=0; i< Narr; i++){
+        printf("%.2f\t",arr[i]/(arr1[i]*arr1[i]));
+    }
+    printf("\n");
+}
+
 
 void printIntArray(int * arr,int Narr){
     for (int i=0; i< Narr; i++){
@@ -61,24 +78,24 @@ struct LLSupernova * initialize_LLSupernova(float argx, float argy){
 
 void * findNGBFlags(
     int Narr,
-    float * dists,
+    float * dists2,
     float * linkingLengths,
     float link_node,
     int * ngbflags, int * numNGB){
     for (int i=0; i<Narr;i++){
-        if (dists[i] < link_node || dists[i] < linkingLengths[i]){
+        if (dists2[i] < link_node*link_node || dists2[i] < linkingLengths[i]*linkingLengths[i]){
             ngbflags[i]=1;
             (*numNGB)++;
         }
     }
 }
 
-void calculateDists(float * point, float * xs, float * ys, float * zs,int Narr, float * dists){
+void calculateDists(float * point, float * xs, float * ys, float * zs,int Narr, float * dists2){
     for (int i =0; i<Narr; i++){
         float dx = point[0]-xs[i];
         float dy = point[1]-ys[i];
         float dz = point[2]-zs[i];
-        dists[i]=dx*dx + dy*dy + dz*dz;
+        dists2[i]=dx*dx + dy*dy + dz*dz;
     }
 }
 
@@ -90,22 +107,24 @@ int fillFlags(
     int Narr, int * NGBFlags){
 
     int numNGB=0;
-    float * dists = (float *) malloc(Narr*sizeof(float));
+    float * dists2 = (float *) malloc(Narr*sizeof(float));
     // calculate the distance to each point
-    calculateDists(point,xs,ys,zs,Narr,dists);
+    calculateDists(point,xs,ys,zs,Narr,dists2);
 
 #ifdef DEBUG
     printArray(ids,Narr);
-    printArray(dists,Narr);
-    printArray(point,3);
-    printArray(xs,Narr);
-    printArray(ys,Narr);
-    printArray(zs,Narr);
+    //printArray(dists2,Narr);
+    printArrayRatio(dists2,linkingLengths,Narr);
+    //printArrayFixedRatio(dists2,link_node,Narr);
+    //printArray(point,3);
+    //printArray(xs,Narr);
+    //printArray(ys,Narr);
+    //printArray(zs,Narr);
 #endif
 
     findNGBFlags(
         Narr,
-        dists,
+        dists2,
         linkingLengths,link_node,
         NGBFlags,&numNGB);
 #ifdef DEBUG
