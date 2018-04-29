@@ -23,23 +23,51 @@ SupernovaCluster._fields_ = [
 
 def findFoFClustering(xs,ys,zs,ids,launchTimes,coolingTimes,linkingLengths,write_to_filename=0):
     NSNe = len(xs)
+    if write_to_filename:
+        raise Exception("need to write a loading routine")
     return extractLinkedListValues(
         *getLinkedListHead(NSNe,xs,ys,zs,ids,launchTimes,coolingTimes,linkingLengths)
         ,write_to_filename=write_to_filename)
 
-def getLinkedListHead(NSNe,xs,ys,zs,ids,launchTimes,coolingTimes,linkingLengths):
+def getLinkedListHead(
+    NSNe,
+    xs,ys,zs,ids,
+    launchTimes,coolingTimes,linkingLengths,
+    DEBUG=0):
     head = SupernovaCluster()    
-    exec_call = "/home/abg6257/CFoF/fof_sne.so"
+    exec_call = "/home/abg6257/python/CFoF/fof_sne.so"
     c_obj = ctypes.CDLL(exec_call)
 
     h_out_cast=ctypes.c_int
     H_OUT=h_out_cast()
 
     ## copy the arrays because otherwise the original will get shuffled by the c routine
-    xs,ys,zs,ids = copy.copy(xs),copy.copy(ys),copy.copy(zs),copy.copy(ids)
-    launchTimes=copy.copy(launchTimes)
-    coolingTimes=copy.copy(coolingTimes)
-    linkingLengths=copy.copy(linkingLengths)
+    ## need to cast to float as well!
+    xs,ys,zs,ids = (
+        copy.copy(xs).astype('f'),
+        copy.copy(ys).astype('f'),
+        copy.copy(zs).astype('f'),
+        copy.copy(ids).astype('f')
+    )
+        
+    launchTimes=copy.copy(launchTimes).astype('f')
+    coolingTimes=copy.copy(coolingTimes).astype('f')
+    linkingLengths=copy.copy(linkingLengths).astype('f')
+
+    if DEBUG:
+        xs=xs[:10]
+        ys=ys[:10]
+        zs=zs[:10]
+        ids=ids[:10]
+        launchTimes=launchTimes[:10]
+        coolingTimes=coolingTimes[:10]
+        linkingLengths=linkingLengths[:10]
+        NSNe = 10
+
+        print ids[:10],type(ids[0])
+        print xs[:10],type(xs[0])
+        print coolingTimes,type(coolingTimes[0])
+        print launchTimes,type(launchTimes[0])
 
     print "Executing c code"
     init_time=time.time()
@@ -58,11 +86,12 @@ def getLinkedListHead(NSNe,xs,ys,zs,ids,launchTimes,coolingTimes,linkingLengths)
         ctypes.byref(head),
         ctypes.byref(H_OUT))
 
-
     print numClusters,'clusters found'
     print time.time()-init_time,'s elapsed'
     ## skip the empty head node
     head = head.NextCluster.contents
+    ## make sure to delete the copies made
+    del xs,ys,zs,ids,launchTimes,coolingTimes,linkingLengths
     return numClusters,head
 
 

@@ -5,6 +5,8 @@
 
 
 //#define DEBUG
+//#define SUPERDEBUG
+//#define PRETTYPRINT
 
 void printArray(float * arr,int Narr){
     for (int i=0; i< Narr; i++){
@@ -91,15 +93,26 @@ void * findNGBFlags(
         launch_leaf = launchTimes[i];
         cool_leaf = coolingTimes[i];
         link_leaf = linkingLengths[i]*linkingLengths[i];
+#ifdef SUPERDEBUG
+        if (i==0){
+            printf("%d\t ",(dists2[i]<=(link_node*link_node)));
+            printf("%d\n",((launch_leaf >= launch_node) && launch_leaf<=(launch_node+cool_node)));
+            printf("%.2f %.2f %.2f \n",launch_leaf,launch_node,cool_node);
+            printf("-----\n");
+            printf("%d\t",(dists2[i]<=(link_leaf*link_leaf)));
+            printf("%d\n",((launch_node >= launch_leaf) && launch_node<=(launch_leaf+cool_leaf)));
+            printf("%.2f %.2f %.2f \n",launch_node,launch_leaf,cool_leaf);
+        }
+#endif
         if (
                 //check if the leaf is contained in the node's hot bubble
-            (   (dists2[i]<(link_node*link_node)) && 
+            (   (dists2[i]<=(link_node*link_node)) && 
                 //check if the leaf is launched after the node, but before it cools
                 ((launch_leaf >= launch_node) && launch_leaf<=(launch_node+cool_node))
             ) || 
             (
                 //check if the node is contained in the leaf's hot bubble
-                (dists2[i]<(link_leaf*link_leaf)) && 
+                (dists2[i]<=(link_leaf*link_leaf)) && 
                 //check if the node is launched after the leaf, but before it cools
                 ((launch_node >= launch_leaf) && launch_node<=(launch_leaf+cool_leaf))
             )
@@ -133,10 +146,12 @@ int fillFlags(
     // calculate the distance to each point
     calculateDists(point,xs,ys,zs,Narr,dists2);
 
-#ifdef DEBUG
-    printArray(ids,Narr);
-    //printArray(dists2,Narr);
-    printArrayRatio(dists2,linkingLengths,Narr);
+#ifdef SUPERDEBUG
+    //printArray(ids,Narr);
+    printArray(dists2,Narr);
+    printArray(coolingTimes,Narr);
+    printArray(launchTimes,Narr);
+    //printArrayRatio(dists2,linkingLengths,Narr);
     //printArrayFixedRatio(dists2,link_node,Narr);
     //printArray(point,3);
     //printArray(xs,Narr);
@@ -269,13 +284,10 @@ struct SupernovaCluster * findFriends(
     int Nremain=Narr-numNGB;
     int Nadded,numNewNGB;
     int cur_ngb=1; // don't need to check the first neighbor, we just did that above
-#ifdef DEBUG
-    printf("Looking for nearest neighbors\n");
-#endif
     while (cur_ngb < numNGB){
-#ifdef DEBUG
-        printf("Current cluster composition:\t");
-        printArray(buffer_ids,numNGB);
+#ifdef SUPERDEBUG
+        //printf("Current cluster composition:\t");
+        //printArray(buffer_ids,numNGB);
 #endif
         // add a dot for every loop, haha
         Nadded=0;
@@ -387,10 +399,6 @@ struct SupernovaCluster * findFriends(
     memcpy((void *)new_cluster->launchTimes,(void *)launchTimes, numNGB*sizeof(float));
     memcpy((void *)new_cluster->coolingTimes,(void *)coolingTimes, numNGB*sizeof(float));
     memcpy((void *)new_cluster->linkingLengths,(void *)linkingLengths, numNGB*sizeof(float));
-#ifdef DEBUG
-    printf("... finished.\n");
-    printArray(new_cluster->ids,numNGB);
-#endif
 
     return new_cluster;
 
@@ -406,6 +414,14 @@ int FoFNGB(
     float * ids,
     struct SupernovaCluster * head,
     int H_OUT ){
+
+#ifdef SUPERDEBUG
+    printArray(ids,Narr);
+    printArray(xs,Narr);
+    printArray(coolingTimes,Narr);
+    printArray(launchTimes,Narr);
+    return 0;
+#endif
 
 
     int returnVal;
@@ -432,7 +448,7 @@ int FoFNGB(
         Narr-=new_cluster->numNGB;
 
 #ifdef PRETTYPRINT
-        printArray(new_cluster->ids,new_cluster->numNGB);
+        //printArray(new_cluster->ids,new_cluster->numNGB);
         printf("%d members found\n",new_cluster->numNGB);
         printf("%d elements remain\n",Narr);
 #endif
@@ -444,9 +460,6 @@ int FoFNGB(
 
     } // while (Narr > 0)
     H_OUT=cluster_id;
-#ifdef DEBUG
-    printArray(head->ids,head->numNGB);
-#endif
 
 
     /*
