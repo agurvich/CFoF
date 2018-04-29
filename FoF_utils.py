@@ -2,6 +2,7 @@ import ctypes
 import numpy as np
 import time
 import h5py
+import copy
 
 class SupernovaCluster(ctypes.Structure):
     pass
@@ -20,11 +21,11 @@ SupernovaCluster._fields_ = [
             ]
 
 
-def findFoFClustering(xs,ys,zs,ids,launchTimes,coolingTimes,linkingLengths):
+def findFoFClustering(xs,ys,zs,ids,launchTimes,coolingTimes,linkingLengths,write_to_filename=0):
     NSNe = len(xs)
     return extractLinkedListValues(
         *getLinkedListHead(NSNe,xs,ys,zs,ids,launchTimes,coolingTimes,linkingLengths)
-        ,write_to_filename='test')
+        ,write_to_filename=write_to_filename)
 
 def getLinkedListHead(NSNe,xs,ys,zs,ids,launchTimes,coolingTimes,linkingLengths):
     head = SupernovaCluster()    
@@ -33,6 +34,12 @@ def getLinkedListHead(NSNe,xs,ys,zs,ids,launchTimes,coolingTimes,linkingLengths)
 
     h_out_cast=ctypes.c_int
     H_OUT=h_out_cast()
+
+    ## copy the arrays because otherwise the original will get shuffled by the c routine
+    xs,ys,zs,ids = copy.copy(xs),copy.copy(ys),copy.copy(zs),copy.copy(ids)
+    launchTimes=copy.copy(launchTimes)
+    coolingTimes=copy.copy(coolingTimes)
+    linkingLengths=copy.copy(linkingLengths)
 
     print "Executing c code"
     init_time=time.time()
@@ -52,7 +59,7 @@ def getLinkedListHead(NSNe,xs,ys,zs,ids,launchTimes,coolingTimes,linkingLengths)
         ctypes.byref(H_OUT))
 
 
-    print numClusters,'many clusters found'
+    print numClusters,'clusters found'
     print time.time()-init_time,'s elapsed'
     ## skip the empty head node
     head = head.NextCluster.contents
