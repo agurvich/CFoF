@@ -3,6 +3,10 @@ import numpy as np
 import time
 import h5py
 import copy
+import os
+
+## flag for debug statements
+DEBUG=0
 
 class SupernovaCluster(ctypes.Structure):
     pass
@@ -21,21 +25,21 @@ SupernovaCluster._fields_ = [
             ]
 
 
-def findFoFClustering(xs,ys,zs,ids,launchTimes,coolingTimes,linkingLengths,write_to_filename=0):
+def findFoFClustering(xs,ys,zs,ids,launchTimes,coolingTimes,linkingLengths):
     NSNe = len(xs)
-    if write_to_filename:
-        raise Exception("need to write a loading routine")
     return extractLinkedListValues(
-        *getLinkedListHead(NSNe,xs,ys,zs,ids,launchTimes,coolingTimes,linkingLengths)
-        ,write_to_filename=write_to_filename)
+        *getLinkedListHead(NSNe,xs,ys,zs,ids,launchTimes,coolingTimes,linkingLengths))
 
 def getLinkedListHead(
     NSNe,
     xs,ys,zs,ids,
-    launchTimes,coolingTimes,linkingLengths,
-    DEBUG=0):
+    launchTimes,coolingTimes,linkingLengths):
+    
+    ## create a new c struct
     head = SupernovaCluster()    
-    exec_call = "/home/abg6257/python/CFoF/fof_sne.so"
+
+    ## find that shared object library 
+    exec_call = os.path.join(os.environ['HOME'],"python/CFoF/fof_sne.so")
     c_obj = ctypes.CDLL(exec_call)
 
     h_out_cast=ctypes.c_int
@@ -64,13 +68,15 @@ def getLinkedListHead(
         linkingLengths=linkingLengths[:10]
         NSNe = 10
 
-        print ids[:10],type(ids[0])
-        print xs[:10],type(xs[0])
-        print coolingTimes,type(coolingTimes[0])
-        print launchTimes,type(launchTimes[0])
+        print("ids",ids[:10],type(ids[0]))
+        print("xs",xs[:10],type(xs[0]))
+        print("cooling times",coolingTimes,type(coolingTimes[0]))
+        print("launch times",launchTimes,type(launchTimes[0]))
+        print("linking lengths",linkingLengths,type(linkingLengths))
 
     print "Executing c code"
     init_time=time.time()
+
     numClusters = c_obj.FoFNGB(
         ctypes.c_int(NSNe),
         xs.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
@@ -86,7 +92,7 @@ def getLinkedListHead(
         ctypes.byref(head),
         ctypes.byref(H_OUT))
 
-    print numClusters,'clusters found'
+    print numClusters,'groups found'
     print time.time()-init_time,'s elapsed'
     ## skip the empty head node
     head = head.NextCluster.contents
@@ -95,7 +101,7 @@ def getLinkedListHead(
     return numClusters,head
 
 
-def extractLinkedListValues(numClusters,head,write_to_filename=0):    
+def extractLinkedListValues(numClusters,head):    
     ## initialize arrays
     numNGBs=[]
     masterListIndices=[0]
@@ -115,22 +121,10 @@ def extractLinkedListValues(numClusters,head,write_to_filename=0):
             print i,numClusters
             raise
             
+
     ## unpack the flattened arrays
     flat_xss,flat_yss,flat_zss,flat_idss,flat_ltss,flat_ctss,flat_llss=valss
-    if write_to_filename:
-        ## overwrites
-        with h5py.File(write_to_filename+".hdf5",'w') as handle:
-            ## set the data group's values, lazily
-            group=handle.create_group('ClusterData')
-            for key,val in zip(keys[:-3],valss):
-                group['flat_'+key[0]+'s']=val
-                
-            group["masterListIndices"]=masterListIndices
-            group["numNGBs"]=numNGBs
-            
-            print handle.keys()
-            print handle['ClusterData'].keys()
-        
+         
     ##split the flattened arrays
     xss = splitFlattenedArray(flat_xss,masterListIndices)
     yss = splitFlattenedArray(flat_yss,masterListIndices)
@@ -139,13 +133,18 @@ def extractLinkedListValues(numClusters,head,write_to_filename=0):
     ltss = splitFlattenedArray(flat_ltss,masterListIndices)
     ctss = splitFlattenedArray(flat_ctss,masterListIndices)
     llss = splitFlattenedArray(flat_llss,masterListIndices)
-    return xss,yss,zss,idss,ltss,ctss,llss,np.array(numNGBs),np.array(clusterIDs)
-    
+    valss = [
+        xss,yss,zss,
+        idss,
+        ltss,ctss,
+        llss,
+        np.array(numNGBs),np.array(clusterIDs),
+        masterListIndices]
+    return valss
     
 def splitFlattenedArray(flat_arr,masterListIndices):
     return np.split(flat_arr,masterListIndices[1:-1])
-
-        
+     
 def extractSNClusterObjValues(head,keys,valss,numNGBs,masterListIndices,clusterIDs):
     for i,(key,val) in enumerate(keys):
         if key == 'numNGB':
@@ -156,5 +155,18 @@ def extractSNClusterObjValues(head,keys,valss,numNGBs,masterListIndices,clusterI
         elif key =='NextCluster':
             pass
         else:
+            if DEBUG:
+                print(key,'--',np.ctypeslib.as_array(getattr(head,key),shape=(head.numNGB,)))
             valss[i]=np.append(valss[i],[np.ctypeslib.as_array(getattr(head,key),shape=(head.numNGB,))])
             
+def main():
+    Ntest = 10
+    xs = ys = zs = np.ones(Ntest)
+    ids = np.array(range(Ntest))
+    launchTimes = np.ones(Ntest)
+    coolingTimes = np.ones(Ntest)*2.0
+    linkingLengths = np.array([.114]*Ntest)
+    findFoFClustering(xs,ys,zs,ids,launchTimes,coolingTimes,linkingLengths)
+
+if __name__ == '__main__':
+    main()

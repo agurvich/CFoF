@@ -42,9 +42,9 @@ struct SupernovaCluster{
     float * ys;
     float * zs;
     float * ids;
-    float * linkingLengths;
     float * launchTimes;
     float * coolingTimes;
+    float * linkingLengths;
     int numNGB;
     int cluster_id;
     struct SupernovaCluster  * NextCluster; 
