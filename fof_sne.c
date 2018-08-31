@@ -50,22 +50,6 @@ struct SupernovaCluster{
     struct SupernovaCluster  * NextCluster; 
 };
 
-struct GMCClump{
-    float * xs;
-    float * ys;
-    float * zs;
-    float * vxs;
-    float * vys;
-    float * vzs;
-    float * masses; 
-    float * sfrs;
-    float * nH;
-    float * ids;
-    int numNGB;
-    int cluster_id;
-    struct GMCClump * NextCluster; 
-};
-
 void * findNGBFlags(
     int Narr,
     float * dists2,
@@ -452,6 +436,22 @@ int FoFSNeNGB(
 
 
 /* -----------------------------------------------------*/
+struct GMCClump{
+    float * xs;
+    float * ys;
+    float * zs;
+    float * vxs;
+    float * vys;
+    float * vzs;
+    float * masses; 
+    float * sfrs;
+    float * nH;
+    float * ids;
+    int numNGB;
+    int cluster_id;
+    struct GMCClump * NextCluster; 
+};
+
 void * findGMCNGBFlags(
     int Narr,
     float * dists2,

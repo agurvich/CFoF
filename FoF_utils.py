@@ -8,6 +8,10 @@ import os
 ## flag for debug statements
 DEBUG=0
 
+def splitFlattenedArray(flat_arr,masterListIndices):
+    return np.split(flat_arr,masterListIndices[1:-1])
+
+############### SNe Functions ############### 
 class SupernovaCluster(ctypes.Structure):
     pass
 
@@ -24,13 +28,12 @@ SupernovaCluster._fields_ = [
                 ("NextCluster",ctypes.POINTER(SupernovaCluster))
             ]
 
-
-def findFoFClustering(xs,ys,zs,ids,launchTimes,coolingTimes,linkingLengths):
+def findSNeFoFClustering(xs,ys,zs,ids,launchTimes,coolingTimes,linkingLengths):
     NSNe = len(xs)
-    return extractLinkedListValues(
-        *getLinkedListHead(NSNe,xs,ys,zs,ids,launchTimes,coolingTimes,linkingLengths))
+    return extractSNeLinkedListValues(
+        *getSNeLinkedListHead(NSNe,xs,ys,zs,ids,launchTimes,coolingTimes,linkingLengths))
 
-def getLinkedListHead(
+def getSNeLinkedListHead(
     NSNe,
     xs,ys,zs,ids,
     launchTimes,coolingTimes,linkingLengths):
@@ -101,7 +104,7 @@ def getLinkedListHead(
     return numClusters,head
 
 
-def extractLinkedListValues(numClusters,head):    
+def extractSNeLinkedListValues(numClusters,head):    
     ## initialize arrays
     numNGBs=[]
     masterListIndices=[0]
@@ -112,7 +115,7 @@ def extractLinkedListValues(numClusters,head):
     
     ## loop through links of the linked list and add their values to a single flattened array
     for i in xrange(numClusters):
-        extractSNClusterObjValues(head,keys,valss,numNGBs,masterListIndices,clusterIDs)
+        extractSNeClusterObjValues(head,keys,valss,numNGBs,masterListIndices,clusterIDs)
         ## iterate the linked list
         try:
             if i < (numClusters-1):
@@ -141,11 +144,8 @@ def extractLinkedListValues(numClusters,head):
         np.array(numNGBs),np.array(clusterIDs),
         masterListIndices]
     return valss
-    
-def splitFlattenedArray(flat_arr,masterListIndices):
-    return np.split(flat_arr,masterListIndices[1:-1])
-     
-def extractSNClusterObjValues(head,keys,valss,numNGBs,masterListIndices,clusterIDs):
+         
+def extractSNeClusterObjValues(head,keys,valss,numNGBs,masterListIndices,clusterIDs):
     for i,(key,val) in enumerate(keys):
         if key == 'numNGB':
             numNGBs+=[head.numNGB]
@@ -159,14 +159,189 @@ def extractSNClusterObjValues(head,keys,valss,numNGBs,masterListIndices,clusterI
                 print(key,'--',np.ctypeslib.as_array(getattr(head,key),shape=(head.numNGB,)))
             valss[i]=np.append(valss[i],[np.ctypeslib.as_array(getattr(head,key),shape=(head.numNGB,))])
             
-def main():
+
+def testSNe():
     Ntest = 10
     xs = ys = zs = np.ones(Ntest)
     ids = np.array(range(Ntest))
     launchTimes = np.ones(Ntest)
     coolingTimes = np.ones(Ntest)*2.0
     linkingLengths = np.array([.114]*Ntest)
-    print findFoFClustering(xs,ys,zs,ids,launchTimes,coolingTimes,linkingLengths)
+    print("SNe test:",)
+    print("-----------------------------------")
+    print(findSNeFoFClustering(xs,ys,zs,ids,launchTimes,coolingTimes,linkingLengths))
+    print("-----------------------------------")
+
+############### GMC Functions ############### 
+class GMCClump(ctypes.Structure):
+    pass
+
+GMCClump._fields_ = [
+                ("xs", ctypes.POINTER(ctypes.c_float)),
+                ("ys", ctypes.POINTER(ctypes.c_float)),
+                ("zs", ctypes.POINTER(ctypes.c_float)),
+                ("vxs", ctypes.POINTER(ctypes.c_float)),
+                ("vys", ctypes.POINTER(ctypes.c_float)),
+                ("vzs", ctypes.POINTER(ctypes.c_float)),
+                ("masses", ctypes.POINTER(ctypes.c_float)),
+                ("sfrs", ctypes.POINTER(ctypes.c_float)),
+                ("nH", ctypes.POINTER(ctypes.c_float)),
+                ("ids",ctypes.POINTER(ctypes.c_float)),
+                ("numNGB",ctypes.c_int),
+                ("cluster_id",ctypes.c_int),
+                ("NextCluster",ctypes.POINTER(GMCClump))
+            ]
+
+def findGMCFoFClustering(
+    linkingLength,
+    xs,ys,zs,
+    vxs,vys,vzs,
+    masses,sfrs,nH,
+    ids):
+    NGMC = len(xs)
+    return extractGMCLinkedListValues(
+        *getGMCLinkedListHead(
+            NGMC,
+            linkingLength,
+            xs,ys,zs,
+            vxs,vys,vzs,
+            masses,sfrs,nH,
+            ids))
+
+def getGMCLinkedListHead(
+    NGMC,
+    linkingLength,
+    xs,ys,zs,
+    vxs,vys,vzs,
+    masses,sfrs,nH,
+    ids):
+    
+    ## create a new c struct
+    head = GMCClump()    
+
+    ## find that shared object library 
+    exec_call = os.path.join(os.environ['HOME'],"python/CFoF/fof_sne.so")
+    c_obj = ctypes.CDLL(exec_call)
+
+    h_out_cast=ctypes.c_int
+    H_OUT=h_out_cast()
+
+    ## copy the arrays because otherwise the original will get shuffled by the c routine
+    ## need to cast to float as well!
+    xs,ys,zs,vxs,vys,vzs,masses,sfrs,nH,ids = (
+        copy.copy(xs).astype('f'),
+        copy.copy(ys).astype('f'),
+        copy.copy(zs).astype('f'),
+        copy.copy(vxs).astype('f'),
+        copy.copy(vys).astype('f'),
+        copy.copy(vzs).astype('f'),
+        copy.copy(masses).astype('f'),
+        copy.copy(sfrs).astype('f'),
+        copy.copy(nH).astype('f'),
+        copy.copy(ids).astype('f')
+    )
+        
+    if DEBUG:
+        pass
+
+    print "Executing c code"
+    init_time=time.time()
+
+    numClusters = c_obj.FoFGMCNGB(
+        ctypes.c_int(NGMC),
+        ctypes.c_float(linkingLength),
+        xs.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
+        ys.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
+        zs.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
+        vxs.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
+        vys.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
+        vzs.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
+        masses.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
+        sfrs.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
+        nH.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
+        ids.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
+
+        ctypes.byref(head),
+        ctypes.byref(H_OUT))
+
+    print numClusters,'groups found'
+    print time.time()-init_time,'s elapsed'
+    ## skip the empty head node
+    head = head.NextCluster.contents
+    ## make sure to delete the copies made
+    del xs,ys,zs,vxs,vys,vzs,masses,sfrs,nH,ids
+    return numClusters,head
+
+
+def extractGMCLinkedListValues(numClusters,head):    
+    ## initialize arrays
+    numNGBs=[]
+    masterListIndices=[0]
+    clusterIDs=[]
+    keys = np.array(head._fields_)
+    ## assumes that the final 3 in this list are numNGB,cluster_id,NextCluster (which they are, since I define _fields_ above)
+    valss = [[] for i in xrange(len(keys)-3)]
+    
+    ## loop through links of the linked list and add their values to a single flattened array
+    for i in xrange(numClusters):
+        extractGMCClusterObjValues(head,keys,valss,numNGBs,masterListIndices,clusterIDs)
+        ## iterate the linked list
+        try:
+            if i < (numClusters-1):
+                head = head.NextCluster.contents
+        except:
+            print i,numClusters
+            raise
+            
+    ## unflatten the flattened arrays
+    unflat_valss = []
+    for flat_vals in valss:
+        unflat_valss+=[splitFlattenedArray(flat_vals,masterListIndices)]
+         
+    ##split the flattened arrays
+    unflat_valss += [
+        np.array(numNGBs),np.array(clusterIDs),
+        masterListIndices]
+    return unflat_valss
+         
+def extractGMCClusterObjValues(head,keys,valss,numNGBs,masterListIndices,clusterIDs):
+    print "Extracting"
+    print head
+    for i,(key,val) in enumerate(keys):
+        print key
+        if key == 'numNGB':
+            numNGBs+=[head.numNGB]
+            masterListIndices+=[masterListIndices[-1]+head.numNGB]
+        elif key == 'cluster_id':
+            clusterIDs+=[head.cluster_id]
+        elif key =='NextCluster':
+            pass
+        else:
+            valss[i]=np.append(valss[i],[np.ctypeslib.as_array(getattr(head,key),shape=(head.numNGB,))])
+
+def testGMC():
+    Ntest = 10
+    xs = ys = zs = np.ones(Ntest)
+    vxs = vys = vzs = np.ones(Ntest)
+    masses = sfrs = nH = np.ones(Ntest)
+    ids = np.array(range(Ntest))
+    linkingLength = 1
+    print("GMC test:",)
+    print("-----------------------------------")
+    print(findGMCFoFClustering(
+        linkingLength,
+        xs,ys,zs,
+        vxs,vys,vzs,
+        masses,sfrs,nH,
+        ids))
+    print("-----------------------------------")
+
+def main():
+    testSNe()
+    testGMC()
+
+
+
 
 if __name__ == '__main__':
     main()
