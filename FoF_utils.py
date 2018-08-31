@@ -77,7 +77,7 @@ def getLinkedListHead(
     print "Executing c code"
     init_time=time.time()
 
-    numClusters = c_obj.FoFNGB(
+    numClusters = c_obj.FoFSNeNGB(
         ctypes.c_int(NSNe),
         xs.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
         ys.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
@@ -166,7 +166,7 @@ def main():
     launchTimes = np.ones(Ntest)
     coolingTimes = np.ones(Ntest)*2.0
     linkingLengths = np.array([.114]*Ntest)
-    findFoFClustering(xs,ys,zs,ids,launchTimes,coolingTimes,linkingLengths)
+    print findFoFClustering(xs,ys,zs,ids,launchTimes,coolingTimes,linkingLengths)
 
 if __name__ == '__main__':
     main()
