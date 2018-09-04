@@ -200,6 +200,7 @@ def findGMCFoFClustering(
     ids):
     NGMC = len(xs)
     return extractGMCLinkedListValues(
+        linkingLength,
         *getGMCLinkedListHead(
             NGMC,
             linkingLength,
@@ -273,7 +274,7 @@ def getGMCLinkedListHead(
     return numClusters,head
 
 
-def extractGMCLinkedListValues(numClusters,head):    
+def extractGMCLinkedListValues(linkingLength,numClusters,head):    
     ## initialize arrays
     numNGBs=[]
     masterListIndices=[0]
@@ -294,7 +295,7 @@ def extractGMCLinkedListValues(numClusters,head):
             raise
             
     ## unflatten the flattened arrays
-    unflat_valss = []
+    unflat_valss = [linkingLength]
     for flat_vals in valss:
         unflat_valss+=[splitFlattenedArray(flat_vals,masterListIndices)]
          
@@ -305,10 +306,7 @@ def extractGMCLinkedListValues(numClusters,head):
     return unflat_valss
          
 def extractGMCClusterObjValues(head,keys,valss,numNGBs,masterListIndices,clusterIDs):
-    print "Extracting"
-    print head
     for i,(key,val) in enumerate(keys):
-        print key
         if key == 'numNGB':
             numNGBs+=[head.numNGB]
             masterListIndices+=[masterListIndices[-1]+head.numNGB]
