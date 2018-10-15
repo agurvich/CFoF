@@ -138,6 +138,7 @@ int fillFlags(
 #ifdef DEBUG
     printf("Found %d friends\n",numNGB);
 #endif
+    free(dists2);
     return numNGB;
 }
 
@@ -370,6 +371,18 @@ struct SupernovaCluster * findSNeFriends(
     memcpy((void *)new_cluster->coolingTimes,(void *)buffer_coolingTimes, numNGB*sizeof(float));
     memcpy((void *)new_cluster->linkingLengths,(void *)buffer_linkingLengths, numNGB*sizeof(float));
 
+    // free all those buffers
+    free(buffer_xs);
+    free(buffer_ys);
+    free(buffer_zs);
+    free(buffer_ids);
+    free(buffer_launchTimes);
+    free(buffer_coolingTimes);
+    free(buffer_linkingLengths);
+
+    free(NGBFlags); 
+    free(NGBIndices); 
+
     return new_cluster;
 
 
@@ -399,6 +412,9 @@ int FoFSNeNGB(
 
     while (Narr > 0){
         // take our point to be the first SNe in the list
+        if (cluster_id % 25 == 0){
+            printf("Working on cluster %d\n",cluster_id);
+        }
 
 
 #ifdef PRETTYPRINT
@@ -483,6 +499,8 @@ int fillGMCFlags(
         dists2,
         link_length2,
         NGBFlags,&numNGB);
+
+    free(dists2);
 
     return numNGB;
 }
@@ -728,6 +746,25 @@ struct GMCClump * findGMCFriends(
     memcpy((void *)new_cluster->ids,(void *)buffer_ids, numNGB*sizeof(float));
 
 
+    // free all those buffers
+    free(buffer_xs);
+    free(buffer_ys);
+    free(buffer_zs);
+
+    free(buffer_vxs);
+    free(buffer_vys);
+    free(buffer_vzs);
+
+    free(buffer_masses);
+    free(buffer_sfrs);
+    free(buffer_nH);
+
+    free(buffer_ids);
+
+
+    free(NGBFlags); 
+    free(NGBIndices); 
+
     return new_cluster;
 
 
@@ -758,7 +795,6 @@ int FoFGMCNGB(
 
     while (Narr > 0){
         // take our point to be the first SNe in the list
-
 
 #ifdef PRETTYPRINT
         printf("------------------------------------------------------\n");
