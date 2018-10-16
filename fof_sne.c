@@ -381,7 +381,6 @@ struct SupernovaCluster * findSNeFriends(
     free(buffer_linkingLengths);
 
     free(NGBFlags); 
-    free(NGBIndices); 
 
     return new_cluster;
 
@@ -763,7 +762,6 @@ struct GMCClump * findGMCFriends(
 
 
     free(NGBFlags); 
-    free(NGBIndices); 
 
     return new_cluster;
 
