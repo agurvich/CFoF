@@ -77,7 +77,7 @@ def getSNeLinkedListHead(
         print("launch times",launchTimes,type(launchTimes[0]))
         print("linking lengths",linkingLengths,type(linkingLengths))
 
-    print "Executing c code"
+    print("Executing c code")
     init_time=time.time()
 
     numClusters = c_obj.FoFSNeNGB(
@@ -95,8 +95,8 @@ def getSNeLinkedListHead(
         ctypes.byref(head),
         ctypes.byref(H_OUT))
 
-    print numClusters,'groups found'
-    print time.time()-init_time,'s elapsed'
+    print(numClusters,'groups found')
+    print(time.time()-init_time,'s elapsed')
     ## skip the empty head node
     head = head.NextCluster.contents
     ## make sure to delete the copies made
@@ -121,7 +121,7 @@ def extractSNeLinkedListValues(numClusters,head):
             if i < (numClusters-1):
                 head = head.NextCluster.contents
         except:
-            print i,numClusters
+            print(i,numClusters)
             raise
             
 
@@ -245,7 +245,7 @@ def getGMCLinkedListHead(
     if DEBUG:
         pass
 
-    print "Executing c code"
+    print("Executing c code")
     init_time=time.time()
 
     numClusters = c_obj.FoFGMCNGB(
@@ -265,8 +265,8 @@ def getGMCLinkedListHead(
         ctypes.byref(head),
         ctypes.byref(H_OUT))
 
-    print numClusters,'groups found'
-    print time.time()-init_time,'s elapsed'
+    print(numClusters,'groups found')
+    print(time.time()-init_time,'s elapsed')
     ## skip the empty head node
     head = head.NextCluster.contents
     ## make sure to delete the copies made
@@ -291,7 +291,7 @@ def extractGMCLinkedListValues(linkingLength,numClusters,head):
             if i < (numClusters-1):
                 head = head.NextCluster.contents
         except:
-            print i,numClusters
+            print(i,numClusters)
             raise
             
     ## unflatten the flattened arrays
