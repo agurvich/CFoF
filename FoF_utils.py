@@ -28,21 +28,23 @@ SupernovaCluster._fields_ = [
                 ("NextCluster",ctypes.POINTER(SupernovaCluster))
             ]
 
-def findSNeFoFClustering(xs,ys,zs,ids,launchTimes,coolingTimes,linkingLengths):
+def findSNeFoFClustering(xs,ys,zs,ids,launchTimes,coolingTimes,linkingLengths,**kwargs):
     NSNe = len(xs)
     return extractSNeLinkedListValues(
-        *getSNeLinkedListHead(NSNe,xs,ys,zs,ids,launchTimes,coolingTimes,linkingLengths))
+        *getSNeLinkedListHead(NSNe,xs,ys,zs,ids,launchTimes,coolingTimes,linkingLengths,**kwargs))
 
 def getSNeLinkedListHead(
     NSNe,
     xs,ys,zs,ids,
-    launchTimes,coolingTimes,linkingLengths):
+    launchTimes,coolingTimes,linkingLengths,
+    repo_subdir = "python",
+):
     
     ## create a new c struct
     head = SupernovaCluster()    
 
     ## find that shared object library 
-    exec_call = os.path.join(os.environ['HOME'],"python/CFoF/fof_sne.so")
+    exec_call = os.path.join(os.environ['HOME'], repo_subdir, "CFoF/fof_sne.so")
     c_obj = ctypes.CDLL(exec_call)
 
     h_out_cast=ctypes.c_int
@@ -111,10 +113,10 @@ def extractSNeLinkedListValues(numClusters,head):
     clusterIDs=[]
     keys = np.array(head._fields_)
     ## assumes that the final 3 in this list are numNGB,cluster_id,NextCluster (which they are, since I define _fields_ above)
-    valss = [[] for i in xrange(len(keys)-3)]
+    valss = [[] for i in range(len(keys)-3)]
     
     ## loop through links of the linked list and add their values to a single flattened array
-    for i in xrange(numClusters):
+    for i in range(numClusters):
         extractSNeClusterObjValues(head,keys,valss,numNGBs,masterListIndices,clusterIDs)
         ## iterate the linked list
         try:
@@ -281,10 +283,10 @@ def extractGMCLinkedListValues(linkingLength,numClusters,head):
     clusterIDs=[]
     keys = np.array(head._fields_)
     ## assumes that the final 3 in this list are numNGB,cluster_id,NextCluster (which they are, since I define _fields_ above)
-    valss = [[] for i in xrange(len(keys)-3)]
+    valss = [[] for i in range(len(keys)-3)]
     
     ## loop through links of the linked list and add their values to a single flattened array
-    for i in xrange(numClusters):
+    for i in range(numClusters):
         extractGMCClusterObjValues(head,keys,valss,numNGBs,masterListIndices,clusterIDs)
         ## iterate the linked list
         try:
