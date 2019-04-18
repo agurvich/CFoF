@@ -113,10 +113,10 @@ def extractSNeLinkedListValues(numClusters,head):
     clusterIDs=[]
     keys = np.array(head._fields_)
     ## assumes that the final 3 in this list are numNGB,cluster_id,NextCluster (which they are, since I define _fields_ above)
-    valss = [[] for i in xrange(len(keys)-3)]
+    valss = [[] for i in range(len(keys)-3)]
     
     ## loop through links of the linked list and add their values to a single flattened array
-    for i in xrange(numClusters):
+    for i in range(numClusters):
         extractSNeClusterObjValues(head,keys,valss,numNGBs,masterListIndices,clusterIDs)
         ## iterate the linked list
         try:
@@ -283,10 +283,10 @@ def extractGMCLinkedListValues(linkingLength,numClusters,head):
     clusterIDs=[]
     keys = np.array(head._fields_)
     ## assumes that the final 3 in this list are numNGB,cluster_id,NextCluster (which they are, since I define _fields_ above)
-    valss = [[] for i in xrange(len(keys)-3)]
+    valss = [[] for i in range(len(keys)-3)]
     
     ## loop through links of the linked list and add their values to a single flattened array
-    for i in xrange(numClusters):
+    for i in range(numClusters):
         extractGMCClusterObjValues(head,keys,valss,numNGBs,masterListIndices,clusterIDs)
         ## iterate the linked list
         try:
