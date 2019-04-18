@@ -28,21 +28,23 @@ SupernovaCluster._fields_ = [
                 ("NextCluster",ctypes.POINTER(SupernovaCluster))
             ]
 
-def findSNeFoFClustering(xs,ys,zs,ids,launchTimes,coolingTimes,linkingLengths):
+def findSNeFoFClustering(xs,ys,zs,ids,launchTimes,coolingTimes,linkingLengths,**kwargs):
     NSNe = len(xs)
     return extractSNeLinkedListValues(
-        *getSNeLinkedListHead(NSNe,xs,ys,zs,ids,launchTimes,coolingTimes,linkingLengths))
+        *getSNeLinkedListHead(NSNe,xs,ys,zs,ids,launchTimes,coolingTimes,linkingLengths,**kwargs))
 
 def getSNeLinkedListHead(
     NSNe,
     xs,ys,zs,ids,
-    launchTimes,coolingTimes,linkingLengths):
+    launchTimes,coolingTimes,linkingLengths,
+    repo_subdir = "python",
+):
     
     ## create a new c struct
     head = SupernovaCluster()    
 
     ## find that shared object library 
-    exec_call = os.path.join(os.environ['HOME'],"python/CFoF/fof_sne.so")
+    exec_call = os.path.join(os.environ['HOME'], repo_subdir, "CFoF/fof_sne.so")
     c_obj = ctypes.CDLL(exec_call)
 
     h_out_cast=ctypes.c_int
