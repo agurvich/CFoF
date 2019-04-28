@@ -19,7 +19,7 @@ SupernovaCluster._fields_ = [
                 ("xs", ctypes.POINTER(ctypes.c_float)),
                 ("ys", ctypes.POINTER(ctypes.c_float)),
                 ("zs", ctypes.POINTER(ctypes.c_float)),
-                ("ids",ctypes.POINTER(ctypes.c_int)),
+                ("ids",ctypes.POINTER(ctypes.c_long)),
                 ("launchTimes", ctypes.POINTER(ctypes.c_float)),
                 ("coolingTimes", ctypes.POINTER(ctypes.c_float)),
                 ("linkingLengths", ctypes.POINTER(ctypes.c_float)),
@@ -57,7 +57,7 @@ def getSNeLinkedListHead(
         copy.copy(xs).astype('f'),
         copy.copy(ys).astype('f'),
         copy.copy(zs).astype('f'),
-        copy.copy(ids).astype(np.int32)
+        copy.copy(ids).astype(np.int64)
     )
         
     launchTimes=copy.copy(launchTimes).astype('f')
@@ -401,9 +401,9 @@ def testGMC():
     print("-----------------------------------")
 
 def main():
-    testSNe()
-    testGMC()
-    #runFromDEBUG()
+    #testSNe()
+    #testGMC()
+    runFromDEBUG()
 
 
 if __name__ == '__main__':
