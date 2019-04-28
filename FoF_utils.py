@@ -19,7 +19,7 @@ SupernovaCluster._fields_ = [
                 ("xs", ctypes.POINTER(ctypes.c_float)),
                 ("ys", ctypes.POINTER(ctypes.c_float)),
                 ("zs", ctypes.POINTER(ctypes.c_float)),
-                ("ids",ctypes.POINTER(ctypes.c_float)),
+                ("ids",ctypes.POINTER(ctypes.c_int)),
                 ("launchTimes", ctypes.POINTER(ctypes.c_float)),
                 ("coolingTimes", ctypes.POINTER(ctypes.c_float)),
                 ("linkingLengths", ctypes.POINTER(ctypes.c_float)),
@@ -44,7 +44,8 @@ def getSNeLinkedListHead(
     head = SupernovaCluster()    
 
     ## find that shared object library 
-    exec_call = os.path.join(os.environ['HOME'], repo_subdir, "CFoF/fof_sne.so")
+    exec_call = os.path.join(
+        os.environ['HOME'], repo_subdir, "CFoF/fof_sne.so")
     c_obj = ctypes.CDLL(exec_call)
 
     h_out_cast=ctypes.c_int
@@ -56,7 +57,7 @@ def getSNeLinkedListHead(
         copy.copy(xs).astype('f'),
         copy.copy(ys).astype('f'),
         copy.copy(zs).astype('f'),
-        copy.copy(ids).astype('f')
+        copy.copy(ids).astype(np.int32)
     )
         
     launchTimes=copy.copy(launchTimes).astype('f')
@@ -72,6 +73,29 @@ def getSNeLinkedListHead(
         coolingTimes=coolingTimes[:10]
         linkingLengths=linkingLengths[:10]
         NSNe = 10
+
+        h5file = os.path.join(
+            os.environ['HOME'], repo_subdir,
+            'CFoF',
+            "DEBUG.hdf5")
+        print("writing debug values to file",h5file)
+        with h5py.File(h5file,'a') as handle:
+            try:
+                group = handle.create_group(
+                    "debug")
+            except:
+                del handle['debug']
+                group = handle.create_group(
+                    "debug")
+
+            group['xs'] = xs
+            group['ys'] = ys
+            group['zs'] = zs
+            group['ids'] = ids
+            group['launchTimes'] = launchTimes
+            group['coolingTimes'] = coolingTimes
+            group['linkingLengths'] = linkingLengths
+            group['NSNe'] = NSNe
 
         print("ids",ids[:10],type(ids[0]))
         print("xs",xs[:10],type(xs[0]))
@@ -92,7 +116,7 @@ def getSNeLinkedListHead(
         coolingTimes.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
         linkingLengths.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
 
-        ids.ctypes.data_as(ctypes.POINTER(ctypes.c_float)),
+        ids.ctypes.data_as(ctypes.POINTER(ctypes.c_int)),
 
         ctypes.byref(head),
         ctypes.byref(H_OUT))
@@ -158,10 +182,50 @@ def extractSNeClusterObjValues(head,keys,valss,numNGBs,masterListIndices,cluster
             pass
         else:
             if DEBUG:
-                print(key,'--',np.ctypeslib.as_array(getattr(head,key),shape=(head.numNGB,)))
-            valss[i]=np.append(valss[i],[np.ctypeslib.as_array(getattr(head,key),shape=(head.numNGB,))])
+                print(
+                    key,
+                    '--',
+                    np.ctypeslib.as_array(
+                        getattr(head,key),
+                        shape=(head.numNGB,)))
+
+            valss[i]=np.append(
+                valss[i],
+                [np.ctypeslib.as_array(
+                    getattr(head,key),
+                    shape=(head.numNGB,))]
+            )
             
 
+def runFromDEBUG(repo_subdir = 'python'):
+    h5file = os.path.join(
+        os.environ['HOME'], repo_subdir,
+        'CFoF',
+        "DEBUG.hdf5")
+    print("reading debug values to file",h5file)
+    with h5py.File(h5file,'r') as handle:
+        group = handle["debug"]
+
+        xs=group['xs'].value 
+        ys=group['ys'].value 
+        zs=group['zs'].value 
+        ids=group['ids'].value 
+        launchTimes=group['launchTimes'].value
+        coolingTimes=group['coolingTimes'].value
+        linkingLengths=group['linkingLengths'].value
+        NSNe=group['NSNe'].value
+    (xss,yss,zss,
+    idss,
+    ltss,ctss,
+    llss,
+    numNGBs,clusterIDs,
+    masterListIndices) = findSNeFoFClustering(
+        xs,ys,zs,
+        ids,
+        launchTimes,coolingTimes,
+        linkingLengths)
+    print(np.hstack(idss))
+    
 def testSNe():
     Ntest = 10
     xs = ys = zs = np.ones(Ntest)
@@ -339,8 +403,7 @@ def testGMC():
 def main():
     testSNe()
     testGMC()
-
-
+    #runFromDEBUG()
 
 
 if __name__ == '__main__':

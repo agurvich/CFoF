@@ -41,7 +41,7 @@ struct SupernovaCluster{
     float * xs;
     float * ys;
     float * zs;
-    float * ids;
+    int * ids;
     float * launchTimes;
     float * coolingTimes;
     float * linkingLengths;
@@ -105,7 +105,7 @@ void calculateDists(float * point, float * xs, float * ys, float * zs,int Narr, 
 int fillFlags(
     float * point, 
     float * xs, float * ys,float * zs,
-    float * ids,
+    int * ids,
     float * launchTimes, float launch_node,
     float * coolingTimes, float cool_node,
     float * linkingLengths, float link_node,
@@ -153,6 +153,38 @@ void getIndicesFromFlags(int * NGBFlags, int Narr, int * NGBIndices){
     }
 }
 
+void extractIntSubarrayWithIndices(
+    int * array, int * subarray, 
+    int * NGBIndices, 
+    int Narray, int numNGB,
+    int checkNGBIndices){
+
+    for (int i=0; i<numNGB; i++){
+        int ngbindex = NGBIndices[i];
+        //extract the value
+        subarray[i]= array[ngbindex];
+
+        // replace it with the value at the end
+        array[ngbindex]=array[Narray-1-i];
+        
+        // only needs to be done once, since we'll be following the same pattern
+        // of extraction/replacement for every array
+        if (checkNGBIndices){
+            // check if the value we just moved is actually a neighbor
+            for (int j=numNGB; j>0; j--){
+                // if it is, then 
+                if (Narray-1-i == NGBIndices[j]){
+                    NGBIndices[j]=ngbindex;
+                    break;
+                }
+                // no need to go any further back, those indices have already been extracted
+                if (i>=j)break;
+            } // for (int j=numNGB; j>0; j--)
+        } // if (checkNGBIndices)
+    } // for (int i=0; i<numNGB; i++)
+}// void extractSubarrayWithIndices
+
+
 void extractSubarrayWithIndices(
     float * array, float * subarray, 
     int * NGBIndices, 
@@ -187,7 +219,7 @@ void extractSubarrayWithIndices(
 struct SupernovaCluster * findSNeFriends(
     float * xs, float * ys, float * zs, 
     float * launchTimes, float * coolingTimes, float * linkingLengths,
-    float * ids,
+    int * ids,
     int Narr,
     int cluster_id){
     
@@ -227,7 +259,7 @@ struct SupernovaCluster * findSNeFriends(
     memset(buffer_ys,0,Narr*sizeof(int));
     float * buffer_zs=(float*)malloc(Narr*sizeof(float));
     memset(buffer_zs,0,Narr*sizeof(int));
-    float * buffer_ids=(float*)malloc(Narr*sizeof(float));
+    int * buffer_ids=(int *)malloc(Narr*sizeof(int));
     memset(buffer_ids,0,Narr*sizeof(int));
     float * buffer_launchTimes=(float*)malloc(Narr*sizeof(float));
     memset(buffer_launchTimes,0,Narr*sizeof(int));
@@ -246,7 +278,7 @@ struct SupernovaCluster * findSNeFriends(
     extractSubarrayWithIndices(xs,buffer_xs,NGBIndices,Narr,numNGB,1);
     extractSubarrayWithIndices(ys,buffer_ys,NGBIndices,Narr,numNGB,0);
     extractSubarrayWithIndices(zs,buffer_zs,NGBIndices,Narr,numNGB,0);
-    extractSubarrayWithIndices(ids,buffer_ids,NGBIndices,Narr,numNGB,0);
+    extractIntSubarrayWithIndices(ids,buffer_ids,NGBIndices,Narr,numNGB,0);
     extractSubarrayWithIndices(launchTimes,buffer_launchTimes,NGBIndices,Narr,numNGB,0);
     extractSubarrayWithIndices(coolingTimes,buffer_coolingTimes,NGBIndices,Narr,numNGB,0);
     extractSubarrayWithIndices(linkingLengths,buffer_linkingLengths,NGBIndices,Narr,numNGB,0);
@@ -317,7 +349,7 @@ struct SupernovaCluster * findSNeFriends(
             extractSubarrayWithIndices(
                 zs,&buffer_zs[numNGB],
                 NGBIndices,Nremain,Nadded,0);
-            extractSubarrayWithIndices(
+            extractIntSubarrayWithIndices(
                 ids,&buffer_ids[numNGB],
                 NGBIndices,Nremain,Nadded,0);
             extractSubarrayWithIndices(
@@ -357,7 +389,7 @@ struct SupernovaCluster * findSNeFriends(
     new_cluster->xs=(float*)malloc(numNGB*sizeof(float));
     new_cluster->ys=(float*)malloc(numNGB*sizeof(float));
     new_cluster->zs=(float*)malloc(numNGB*sizeof(float));
-    new_cluster->ids=(float*)malloc(numNGB*sizeof(float));
+    new_cluster->ids=(int*)malloc(numNGB*sizeof(int));
     new_cluster->launchTimes=(float*)malloc(numNGB*sizeof(float));
     new_cluster->coolingTimes=(float*)malloc(numNGB*sizeof(float));
     new_cluster->linkingLengths=(float*)malloc(numNGB*sizeof(float));
@@ -366,7 +398,7 @@ struct SupernovaCluster * findSNeFriends(
     memcpy((void *)new_cluster->xs,(void *)buffer_xs, numNGB*sizeof(float));
     memcpy((void *)new_cluster->ys,(void *)buffer_ys, numNGB*sizeof(float));
     memcpy((void *)new_cluster->zs,(void *)buffer_zs, numNGB*sizeof(float));
-    memcpy((void *)new_cluster->ids,(void *)buffer_ids, numNGB*sizeof(float));
+    memcpy((void *)new_cluster->ids,(void *)buffer_ids, numNGB*sizeof(int));
     memcpy((void *)new_cluster->launchTimes,(void *)buffer_launchTimes, numNGB*sizeof(float));
     memcpy((void *)new_cluster->coolingTimes,(void *)buffer_coolingTimes, numNGB*sizeof(float));
     memcpy((void *)new_cluster->linkingLengths,(void *)buffer_linkingLengths, numNGB*sizeof(float));
@@ -392,18 +424,17 @@ int FoFSNeNGB(
     float * xs, float * ys, float * zs,
     float * launchTimes, float * coolingTimes,
     float * linkingLengths,
-    float * ids,
+    int * ids,
     struct SupernovaCluster * head,
     int H_OUT ){
 
 #ifdef SUPERDEBUG
-    printArray(ids,Narr);
+    printIntArray(ids,Narr);
     printArray(xs,Narr);
     printArray(coolingTimes,Narr);
     printArray(launchTimes,Narr);
     return 0;
 #endif
-
 
     int returnVal;
 
